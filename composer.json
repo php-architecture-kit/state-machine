@@ -25,10 +25,10 @@
     "require": {
         "php": "^8.4",
         "psr/container": "^2.0",
-        "php-architecture-kit/graph": "^1.0 || @dev",
-        "php-architecture-kit/domain-core": "^1.0 || @dev",
-        "php-architecture-kit/uuid": "^1.0 || @dev",
-        "php-architecture-kit/technical": "^1.0 || @dev"
+        "php-architecture-kit/graph": "^1.0",
+        "php-architecture-kit/domain-core": "^1.0",
+        "php-architecture-kit/uuid": "^1.0",
+        "php-architecture-kit/technical": "^1.0"
     },
     "autoload": {
         "psr-4": {

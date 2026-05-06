@@ -50,7 +50,7 @@ final class SendEmailHandler implements NodeHandlerInterface
     public function handle(NodeHandlerContext $context): NodeHandlerResult
     {
         // do work...
-        return NodeHandlerResult::Completed;
+        return NodeHandlerResult::Continue;
     }
 }
 
