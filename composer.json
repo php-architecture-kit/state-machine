@@ -1,0 +1,40 @@
+{
+    "name": "php-architecture-kit/state-machine",
+    "description": "Graph-based state machine engine for PHP — supports parallel pointers, conditional transitions, typed state, and domain events.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "email": "patryk.baszak@gmail.com",
+            "name": "Patryk Baszak",
+            "homepage": "https://patrykbaszak.com/"
+        }
+    ],
+    "keywords": [
+        "state-machine",
+        "workflow",
+        "graph",
+        "ddd",
+        "framework-agnostic"
+    ],
+    "homepage": "https://github.com/php-architecture-kit/state-machine",
+    "support": {
+        "issues": "https://github.com/php-architecture-kit/state-machine/issues",
+        "source": "https://github.com/php-architecture-kit/state-machine"
+    },
+    "require": {
+        "php": "^8.4",
+        "psr/container": "^2.0",
+        "php-architecture-kit/graph": "^1.0 || @dev",
+        "php-architecture-kit/domain-core": "^1.0 || @dev",
+        "php-architecture-kit/uuid": "^1.0 || @dev",
+        "php-architecture-kit/technical": "^1.0 || @dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpArchitecture\\StateMachine\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
