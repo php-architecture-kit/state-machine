@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpArchitecture\StateMachine\Foundation\State\Policy\State;
+namespace PhpArchitecture\StateMachine\Foundation\State\Policy;
 
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Modification\StateModificationException;
 use PhpArchitecture\StateMachine\Foundation\State\State;

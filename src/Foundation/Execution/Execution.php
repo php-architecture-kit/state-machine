@@ -9,9 +9,9 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Pointers;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerCreationPolicy;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerRemovalPolicy;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerTransitionPolicy;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateDefinitionPolicy;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateModificationPolicy;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateRemovalPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateDefinitionPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateModificationPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateRemovalPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 
 class Execution

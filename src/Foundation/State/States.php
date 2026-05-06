@@ -15,9 +15,9 @@ use PhpArchitecture\StateMachine\Foundation\State\Exception\Modification\StateMo
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Removal\CannotRemoveStateException;
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Removal\StateRemovalException;
 use PhpArchitecture\StateMachine\Foundation\State\Identity\StateId;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateDefinitionPolicy;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateModificationPolicy;
-use PhpArchitecture\StateMachine\Foundation\State\Policy\State\StateRemovalPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateDefinitionPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateModificationPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Policy\StateRemovalPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\Technical\ArrayTransformation;
 use PhpArchitecture\Technical\Assert;
