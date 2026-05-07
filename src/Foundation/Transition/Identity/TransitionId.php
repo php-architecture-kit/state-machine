@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Transition\Identity;
 
-use PhpArchitecture\Uuid\Uuid;
+use PhpArchitecture\Graph\Edge\Identity\EdgeId;
 
-class TransitionId extends Uuid {}
+class TransitionId extends EdgeId {}
