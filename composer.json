@@ -24,7 +24,9 @@
     },
     "require": {
         "php": "^8.4",
+        "psr/clock": "^1.0",
         "psr/container": "^2.0",
+        "php-architecture-kit/clock": "^1.0",
         "php-architecture-kit/graph": "^1.0",
         "php-architecture-kit/domain-core": "^1.0",
         "php-architecture-kit/uuid": "^1.0",

@@ -18,6 +18,8 @@ use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerResult;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Pointer;
+use PhpArchitecture\StateMachine\Foundation\Task\Bus\Default\DeferredTaskBus;
+use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskBusInterface;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Output\TransitionSelectionOutput;
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
@@ -30,8 +32,9 @@ abstract class StateMachine
 
     public function __construct(
         protected readonly ContainerInterface $container,
-        protected readonly StateMachineConfig $config = new StateMachineConfig(),
         ?Graph $graph = null,
+        protected readonly StateMachineConfig $config = new StateMachineConfig(),
+        protected readonly TaskBusInterface $taskBus = new DeferredTaskBus(),
     ) {
         $this->graph = $graph ?? new Graph($this->config->toGraphConfig());
     }
@@ -104,7 +107,7 @@ abstract class StateMachine
         }
 
         $handlerResult = $handler->handle(
-            new NodeHandlerContext($execution->id, $node, $pointer, $execution->states),
+            new NodeHandlerContext($execution->id, $node, $pointer, $execution->states, $this->taskBus),
         );
 
         if ($handlerResult === NodeHandlerResult::Suspended) {
