@@ -89,4 +89,26 @@ class Transition implements TransitionInterface
     {
         return EdgeType::Directed;
     }
+
+    public function withFrom(NodeId $nodeId): self
+    {
+        return new self(
+            $this->id,
+            $nodeId,
+            $this->to,
+            $this->condition,
+            $this->tags,
+        );
+    }
+
+    public function withTo(NodeId $nodeId): self
+    {
+        return new self(
+            $this->id,
+            $this->from,
+            $nodeId,
+            $this->condition,
+            $this->tags,
+        );
+    }
 }

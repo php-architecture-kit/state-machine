@@ -18,4 +18,8 @@ interface TransitionInterface extends EdgeInterface
 
     /** @return string[] */
     public function tags(): array;
+
+    public function withFrom(NodeId $nodeId): self;
+
+    public function withTo(NodeId $nodeId): self;
 }

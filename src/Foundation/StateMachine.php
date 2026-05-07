@@ -10,6 +10,7 @@ use PhpArchitecture\StateMachine\Foundation\Config\StateMachineConfig;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Config\Exception\NoTransitionStrategyException;
+use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\InvalidNodeHandlerException;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\NodeNotFoundException;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
@@ -38,6 +39,19 @@ abstract class StateMachine
         protected readonly TaskBusInterface $taskBus = new DeferredTaskBus(),
     ) {
         $this->graph = $graph ?? new Graph($this->config->toGraphConfig());
+    }
+
+    public function addDefinition(Definition $definition): static
+    {
+        [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
+        foreach ($nodes as $node) {
+            $this->addNode($node);
+        }
+        foreach ($transitions as $transition) {
+            $this->addTransition($transition->from, $transition->to, $transition->condition);
+        }
+
+        return $this;
     }
 
     protected function addNode(NodeInterface $node): static
