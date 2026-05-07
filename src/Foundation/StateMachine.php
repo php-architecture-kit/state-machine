@@ -17,6 +17,7 @@ use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerResult;
+use PhpArchitecture\StateMachine\Foundation\Pointer\NodeHandlingStatus;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Pointer;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Default\DeferredTaskBus;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskBusInterface;
@@ -106,9 +107,15 @@ abstract class StateMachine
             );
         }
 
+        if ($pointer->handlingStatus === NodeHandlingStatus::Completed) {
+            $this->transitionToNextNodes($pointer, $execution);
+            return NodeHandlerResult::Continue;
+        }
+
         $handlerResult = $handler->handle(
             new NodeHandlerContext($execution->id, $node, $pointer, $execution->states, $this->taskBus),
         );
+        $pointer->markNodeHandlingStatusCompleted();
 
         if ($handlerResult === NodeHandlerResult::Suspended) {
             return $handlerResult;

@@ -16,6 +16,7 @@ class Pointer
         public readonly ?PointerId $parentId,
         public protected(set) NodeId $nodeId,
         public protected(set) int $currentStep,
+        public protected(set) NodeHandlingStatus $handlingStatus,
     ) {}
 
     public static function create(
@@ -28,6 +29,7 @@ class Pointer
             null,
             $nodeId,
             0,
+            NodeHandlingStatus::Pending,
         );
     }
 
@@ -39,6 +41,7 @@ class Pointer
             $this->id,
             $this->nodeId,
             $this->currentStep,
+            NodeHandlingStatus::Pending,
         );
     }
 
@@ -46,5 +49,11 @@ class Pointer
     {
         $this->nodeId = $nodeId;
         $this->currentStep++;
+        $this->handlingStatus = NodeHandlingStatus::Pending;
+    }
+
+    public function markNodeHandlingStatusCompleted(): void
+    {
+        $this->handlingStatus = NodeHandlingStatus::Completed;
     }
 }
