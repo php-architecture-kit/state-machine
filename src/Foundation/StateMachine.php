@@ -148,9 +148,9 @@ abstract class StateMachine
      */
     protected function getOutgoingTransitions(NodeId $id): array
     {
-        return $this->graph->edgeStore->getIncidentEdges(
+        return array_values($this->graph->edgeStore->getIncidentEdges(
             $id,
             static fn(EdgeInterface $edge): bool => $edge->u()->equals($id),
-        );
+        ));
     }
 }
