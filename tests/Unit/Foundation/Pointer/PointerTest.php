@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Pointer;
 
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
+use PhpArchitecture\StateMachine\Foundation\Pointer\NodeHandlingStatus;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Pointer;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -118,5 +119,45 @@ class PointerTest extends TestCase
         $pointer->step(NodeId::new());
 
         $this->assertSame(3, $pointer->currentStep);
+    }
+
+    #[Test]
+    public function createSetsPendingHandlingStatus(): void
+    {
+        $pointer = Pointer::create(ExecutionId::new(), NodeId::new());
+
+        $this->assertSame(NodeHandlingStatus::Pending, $pointer->handlingStatus);
+    }
+
+    #[Test]
+    public function markNodeHandlingStatusCompletedSetsCompletedStatus(): void
+    {
+        $pointer = Pointer::create(ExecutionId::new(), NodeId::new());
+
+        $pointer->markNodeHandlingStatusCompleted();
+
+        $this->assertSame(NodeHandlingStatus::Completed, $pointer->handlingStatus);
+    }
+
+    #[Test]
+    public function stepResetsHandlingStatusToPending(): void
+    {
+        $pointer = Pointer::create(ExecutionId::new(), NodeId::new());
+        $pointer->markNodeHandlingStatusCompleted();
+
+        $pointer->step(NodeId::new());
+
+        $this->assertSame(NodeHandlingStatus::Pending, $pointer->handlingStatus);
+    }
+
+    #[Test]
+    public function forkAlwaysSetsPendingHandlingStatusRegardlessOfParentStatus(): void
+    {
+        $pointer = Pointer::create(ExecutionId::new(), NodeId::new());
+        $pointer->markNodeHandlingStatusCompleted();
+
+        $forked = $pointer->fork();
+
+        $this->assertSame(NodeHandlingStatus::Pending, $forked->handlingStatus);
     }
 }
