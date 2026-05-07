@@ -11,6 +11,7 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Strategy\Default\AllPointers
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\ForkTransitionStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\RejectStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\SingleTransitionStrategy;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\TerminalNodeStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\WaitAndForkStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\WaitStrategy;
 use PHPUnit\Framework\Attributes\Test;
@@ -48,7 +49,7 @@ class StateMachineConfigTest extends TestCase
     {
         $config = new StateMachineConfig();
 
-        $this->assertCount(5, $config->transitionStrategies);
+        $this->assertCount(6, $config->transitionStrategies);
     }
 
     #[Test]
@@ -57,6 +58,7 @@ class StateMachineConfigTest extends TestCase
         $config = new StateMachineConfig();
         $types = array_map(static fn(object $s): string => $s::class, $config->transitionStrategies);
 
+        $this->assertContains(TerminalNodeStrategy::class, $types);
         $this->assertContains(WaitAndForkStrategy::class, $types);
         $this->assertContains(WaitStrategy::class, $types);
         $this->assertContains(SingleTransitionStrategy::class, $types);

@@ -68,26 +68,35 @@ abstract class StateMachine
         return $this;
     }
 
-    public function execute(Execution $execution): ExecutionStatus
+    public function execute(Execution $execution, ?int $maxIterations = null): ExecutionStatus
     {
-        $plans = $this->config->pointersSelectionStrategy->select($execution->pointers);
+        $iterations = 0;
+        $anyProgress = false;
+        do {
+            $plans = $this->config->pointersSelectionStrategy->select($execution->pointers);
+            $madeProgress = false;
+            foreach ($plans as $plan) {
+                $stepBefore = $plan->pointer->currentStep;
+                $wasPending = $plan->pointer->handlingStatus === NodeHandlingStatus::Pending;
+                $this->handlePointerOnPath($plan->pointer, $execution, $plan->maxSteps);
 
-        $madeProgress = false;
-        foreach ($plans as $plan) {
-            $stepBefore = $plan->pointer->currentStep;
-            $this->handlePointerOnPath($plan->pointer, $execution, $plan->maxSteps);
-
-            $pointerRemoved = !isset($execution->pointers->pointers[$plan->pointer->id->toString()]);
-            if ($pointerRemoved || $plan->pointer->currentStep > $stepBefore) {
-                $madeProgress = true;
+                $pointerRemoved = !isset($execution->pointers->pointers[$plan->pointer->id->toString()]);
+                $progressed = $pointerRemoved || $plan->pointer->currentStep > $stepBefore;
+                if ($progressed) {
+                    $anyProgress = true;
+                }
+                if ($progressed && $wasPending) {
+                    $madeProgress = true;
+                }
             }
-        }
+            $iterations++;
+        } while ($madeProgress === true && ($maxIterations === null || $iterations < $maxIterations));
 
         if (empty($execution->pointers->pointers)) {
             return ExecutionStatus::Completed;
         }
 
-        return $madeProgress ? ExecutionStatus::Running : ExecutionStatus::Suspended;
+        return $anyProgress ? ExecutionStatus::Running : ExecutionStatus::Suspended;
     }
 
     protected function handlePointerOnPath(Pointer $pointer, Execution $execution, int $maxSteps): void

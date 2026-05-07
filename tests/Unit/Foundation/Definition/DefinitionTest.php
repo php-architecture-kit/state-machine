@@ -180,6 +180,55 @@ class DefinitionTest extends TestCase
     }
 
     #[Test]
+    public function addTransitionWithNodeInterfaceFromAutoRegistersNodeAndUsesItsId(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode(NodeId::new());
+        $nodeB = $this->makeNode(NodeId::new());
+        $definition->addNodePublic($nodeB);
+
+        $definition->addTransitionWithNodePublic($nodeA, $nodeB->id());
+
+        [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
+
+        $this->assertCount(2, $nodes);
+        $this->assertCount(1, $transitions);
+        $this->assertTrue($nodeA->id()->equals(array_values($transitions)[0]->u()));
+    }
+
+    #[Test]
+    public function addTransitionWithNodeInterfaceToAutoRegistersNodeAndUsesItsId(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode(NodeId::new());
+        $nodeB = $this->makeNode(NodeId::new());
+        $definition->addNodePublic($nodeA);
+
+        $definition->addTransitionWithNodePublic($nodeA->id(), $nodeB);
+
+        [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
+
+        $this->assertCount(2, $nodes);
+        $this->assertCount(1, $transitions);
+        $this->assertTrue($nodeB->id()->equals(array_values($transitions)[0]->v()));
+    }
+
+    #[Test]
+    public function addTransitionWithAlreadyRegisteredNodeDoesNotDuplicateIt(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode(NodeId::new());
+        $nodeB = $this->makeNode(NodeId::new());
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($nodeB);
+
+        $definition->addTransitionWithNodePublic($nodeA, $nodeB);
+
+        [$nodes] = $definition->getDefinedNodesAndTransitions();
+        $this->assertCount(2, $nodes);
+    }
+
+    #[Test]
     public function mixedScenarioWithAttachedAndUnattachedPortsProducesCorrectResult(): void
     {
         $definition = $this->makeDefinition();
@@ -234,6 +283,11 @@ class ConcreteDefinition extends Definition
     }
 
     public function addTransitionPublic(NodeId $from, NodeId $to): static
+    {
+        return $this->addTransition($from, $to);
+    }
+
+    public function addTransitionWithNodePublic(NodeId|NodeInterface $from, NodeId|NodeInterface $to): static
     {
         return $this->addTransition($from, $to);
     }

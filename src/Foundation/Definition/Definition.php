@@ -13,6 +13,9 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
 use PhpArchitecture\Technical\Assert;
 use LogicException;
+use PhpArchitecture\StateMachine\Foundation\State\States;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionConditionCallback;
 
 abstract class Definition extends Graph
 {
@@ -27,6 +30,27 @@ abstract class Definition extends Graph
         parent::__construct();
     }
 
+    /**
+     * @param string[] $inputs
+     * @param string[] $outputs
+     * 
+     * @return static
+     */
+    protected static function newInstance(array $inputs, array $outputs): static
+    {
+        $input = (object) array_combine($inputs, array_map(static fn($input): Port => new Port($input), $inputs));
+        $output = (object) array_combine($outputs, array_map(static fn($output): Port => new Port($output), $outputs));
+
+        $instance = new static($input, $output);
+        foreach ([$input, $output] as $portColleciton) {
+            foreach ($portColleciton as $port) {
+                $instance->addNode($port);
+            }
+        }
+
+        return $instance;
+    }
+
     protected function addNode(NodeInterface $node): static
     {
         $this->vertexStore->addVertex($node);
@@ -34,8 +58,25 @@ abstract class Definition extends Graph
         return $this;
     }
 
-    protected function addTransition(NodeId $from, NodeId $to, ?TransitionCondition $condition = null): static
+    /**
+     * @param null|TransitionCondition|callable(States):TransitionConditionDecision $condition
+     */
+    protected function addTransition(NodeId|NodeInterface $from, NodeId|NodeInterface $to, null|callable|TransitionCondition $condition = null): static
     {
+        foreach (['from', 'to'] as $node) {
+            if ($$node instanceof NodeInterface) {
+                if (!$this->vertexStore->hasVertex($$node->id())) {
+                    $this->addNode($$node);
+                }
+
+                $$node = $$node->id;
+            }
+        }
+
+        if (is_callable($condition)) {
+            $condition = TransitionConditionCallback::define($condition);
+        }
+
         $this->edgeStore->addEdge(Transition::create($from, $to, $condition));
 
         return $this;

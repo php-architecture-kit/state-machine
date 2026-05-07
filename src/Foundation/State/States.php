@@ -75,6 +75,17 @@ class States extends AggregateRoot
         return $state;
     }
 
+    public function getState(string $name): ?State
+    {
+        foreach ($this->states as $state) {
+            if ($state->name === $name) {
+                return $state;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * @param StateDetail[] $detailsToAdd
      * @param string[] $detailsToRemove

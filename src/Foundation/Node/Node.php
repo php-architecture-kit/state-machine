@@ -12,14 +12,24 @@ use PhpArchitecture\Technical\Assert;
 
 abstract class Node implements NodeInterface
 {
+    public readonly NodeId $id;
+    private readonly array $tags;
+
     /**
      * @param string[] $tags
      */
-    protected function __construct(
-        public readonly NodeId $id,
-        private readonly array $tags = [],
+    public function __construct(
+        ?NodeId $id = null,
+        array $tags = [],
     ) {
-        Assert::eachString($this->tags, InvalidNodeException::class);
+        Assert::eachString($tags, InvalidNodeException::class);
+        $this->id = $id ?? NodeId::new();
+        $this->tags = $tags;
+    }
+
+    public function id(): NodeId
+    {
+        return $this->id;
     }
 
     /** @return class-string */

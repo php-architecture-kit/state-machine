@@ -11,6 +11,7 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Strategy\PointersSelectionSt
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\ForkTransitionStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\RejectStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\SingleTransitionStrategy;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\TerminalNodeStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\WaitAndForkStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\WaitStrategy;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionStrategy;
@@ -26,6 +27,7 @@ final readonly class StateMachineConfig
         public bool $allowSelfLoops = true,
         public bool $allowParallelTransitions = true,
         public array $transitionStrategies = [
+            new TerminalNodeStrategy(),
             new WaitAndForkStrategy(),
             new WaitStrategy(),
             new SingleTransitionStrategy(),

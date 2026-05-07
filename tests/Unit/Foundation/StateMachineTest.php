@@ -104,7 +104,7 @@ class StateMachineTest extends TestCase
         $execution = Execution::create();
         $execution->pointers->startAt($nodeIdA);
 
-        $status = $machine->execute($execution);
+        $status = $machine->execute($execution, 1);
 
         $this->assertSame(ExecutionStatus::Running, $status);
     }
@@ -216,7 +216,7 @@ class StateMachineTest extends TestCase
     }
 
     #[Test]
-    public function executeThrowsNoTransitionStrategyExceptionWhenNoStrategyMatchesOutput(): void
+    public function executeReturnsCompletedWhenNodeHasNoOutgoingTransitions(): void
     {
         $nodeId = NodeId::new();
         $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
@@ -229,9 +229,9 @@ class StateMachineTest extends TestCase
         $execution = Execution::create();
         $execution->pointers->startAt($nodeId);
 
-        $this->expectException(NoTransitionStrategyException::class);
+        $status = $machine->execute($execution);
 
-        $machine->execute($execution);
+        $this->assertSame(ExecutionStatus::Completed, $status);
     }
 
     #[Test]
@@ -239,16 +239,17 @@ class StateMachineTest extends TestCase
     {
         $nodeIdA = NodeId::new();
         $nodeIdB = NodeId::new();
+        $nodeIdC = NodeId::new();
 
         $handlerA = new CountingHandler(NodeHandlerResult::Suspended);
-        $handlerB = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
+        $handlerBC = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
 
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
-            static function (string $class) use ($handlerA, $handlerB): NodeHandlerInterface {
+            static function (string $class) use ($handlerA, $handlerBC): NodeHandlerInterface {
                 return match ($class) {
                     CountingHandler::class => $handlerA,
-                    ContinuousOrSuspendedHandler::class => $handlerB,
+                    ContinuousOrSuspendedHandler::class => $handlerBC,
                     default => throw new RuntimeException("Unexpected: $class"),
                 };
             },
@@ -257,7 +258,9 @@ class StateMachineTest extends TestCase
         $machine = $this->makeMachine($container);
         $machine->addNodePublic($this->makeNode($nodeIdA, CountingHandler::class));
         $machine->addNodePublic($this->makeNode($nodeIdB, ContinuousOrSuspendedHandler::class));
+        $machine->addNodePublic($this->makeNode($nodeIdC, ContinuousOrSuspendedHandler::class));
         $machine->addTransition($nodeIdA, $nodeIdB);
+        $machine->addTransition($nodeIdB, $nodeIdC);
 
         $execution = Execution::create();
         $execution->pointers->startAt($nodeIdA);
@@ -273,6 +276,7 @@ class StateMachineTest extends TestCase
     {
         $nodeIdA = NodeId::new();
         $nodeIdB = NodeId::new();
+        $nodeIdC = NodeId::new();
 
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
         $container = $this->createMock(ContainerInterface::class);
@@ -281,7 +285,9 @@ class StateMachineTest extends TestCase
         $machine = $this->makeMachine($container);
         $machine->addNodePublic($this->makeNode($nodeIdA, ContinuousOrSuspendedHandler::class));
         $machine->addNodePublic($this->makeNode($nodeIdB, ContinuousOrSuspendedHandler::class));
+        $machine->addNodePublic($this->makeNode($nodeIdC, ContinuousOrSuspendedHandler::class));
         $machine->addTransition($nodeIdA, $nodeIdB);
+        $machine->addTransition($nodeIdB, $nodeIdC);
 
         $execution = Execution::create();
         $pointer = $execution->pointers->startAt($nodeIdA);
@@ -297,6 +303,7 @@ class StateMachineTest extends TestCase
     {
         $nodeIdA = NodeId::new();
         $nodeIdB = NodeId::new();
+        $nodeIdC = NodeId::new();
 
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
         $container = $this->createMock(ContainerInterface::class);
@@ -305,7 +312,9 @@ class StateMachineTest extends TestCase
         $machine = $this->makeMachine($container);
         $machine->addNodePublic($this->makeNode($nodeIdA, ContinuousOrSuspendedHandler::class));
         $machine->addNodePublic($this->makeNode($nodeIdB, ContinuousOrSuspendedHandler::class));
+        $machine->addNodePublic($this->makeNode($nodeIdC, ContinuousOrSuspendedHandler::class));
         $machine->addTransition($nodeIdA, $nodeIdB);
+        $machine->addTransition($nodeIdB, $nodeIdC);
 
         $execution = Execution::create();
         $execution->pointers->startAt($nodeIdA);
