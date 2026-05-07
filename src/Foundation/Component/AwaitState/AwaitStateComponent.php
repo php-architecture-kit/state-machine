@@ -16,6 +16,28 @@ use Psr\Clock\ClockInterface;
 
 class AwaitStateComponent extends Definition
 {
+    /**
+     * Creates an await-state component that suspends execution until a named state (optionally
+     * with a specific detail) appears in States, with an optional timeout.
+     *
+     * Outputs:
+     *   - done    — the awaited state (and detail, if given) is present and timeout has not elapsed
+     *   - expired — the timeout elapsed before the state appeared (never fires when $timeout is null)
+     *
+     * Usage:
+     *   $await = AwaitStateComponent::create('user_answer', 'value', 60);
+     *
+     *   $machine->addDefinition($await);
+     *
+     *   $machine->addTransition($previousNode->id,       $await->input->trigger);
+     *   $machine->addTransition($await->output->done,    $doneNode->id);
+     *   $machine->addTransition($await->output->expired, $expiredNode->id);
+     *
+     * @param string              $stateName  Name of the state to wait for.
+     * @param string|null         $detailName Optional detail key that must also be present on the state.
+     * @param int|null            $timeout    Timeout in seconds. When null the expired output never fires.
+     * @param ClockInterface|null $clock      Clock to use for expiration. Defaults to UTC.
+     */
     public static function create(string $stateName, ?string $detailName = null, ?int $timeout = null, ?ClockInterface $clock = null): self
     {
         $instance = self::newInstance(
