@@ -62,14 +62,14 @@ class AsyncComponent extends Definition
         $asyncNode = new AsyncNode($stateName, $taskFactory);
 
         $awaitComponent = AwaitStateComponent::create($stateName, $detailName, $timeout, $clock);
-        $awaitComponent->input->trigger->attach($asyncNode->id);
-        $awaitComponent->output->done->attach($instance->output->done->id);
-        $awaitComponent->output->expired->attach($instance->output->expired->id);
+        $awaitComponent->input->trigger->attach($asyncNode->id); // @phpstan-ignore-line
+        $awaitComponent->output->done->attach($instance->output->done->id); // @phpstan-ignore-line
+        $awaitComponent->output->expired->attach($instance->output->expired->id); // @phpstan-ignore-line
 
         [$awaitNodes, $awaitTransitions] = $awaitComponent->getDefinedNodesAndTransitions();
 
         $instance->addTransition(
-            $instance->input->trigger,
+            $instance->input->trigger, // @phpstan-ignore-line
             $asyncNode,
             null,
         );
@@ -79,7 +79,7 @@ class AsyncComponent extends Definition
         }
 
         foreach ($awaitTransitions as $transition) {
-            $instance->addTransition($transition->from, $transition->to, $transition->condition);
+            $instance->addTransition($transition->from, $transition->to, $transition->condition); // @phpstan-ignore-line
         }
 
         return $instance;

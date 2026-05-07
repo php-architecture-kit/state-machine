@@ -13,6 +13,8 @@ use PhpArchitecture\Technical\Assert;
 abstract class Node implements NodeInterface
 {
     public readonly NodeId $id;
+
+    /** @var string[] */
     private readonly array $tags;
 
     /**

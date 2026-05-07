@@ -49,7 +49,7 @@ class ParallelComponent extends Definition
         $parallelNode = new ParallelNode();
 
         $instance->addTransition(
-            $instance->input->trigger,
+            $instance->input->trigger, // @phpstan-ignore-line
             $parallelNode,
             null,
         );

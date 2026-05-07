@@ -31,7 +31,6 @@ final class FirstValidTransitionStrategy implements TransitionSelectionStrategy
             match ($decision) {
                 TransitionConditionDecision::Wait     => $waitfor[] = $transition,
                 TransitionConditionDecision::Rejected => $reject[] = $transition,
-                default                               => null,
             };
         }
 

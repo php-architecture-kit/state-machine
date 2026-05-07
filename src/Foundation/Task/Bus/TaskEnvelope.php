@@ -25,6 +25,9 @@ final class TaskEnvelope
         Assert::eachInstanceOf($stamps, TaskStamp::class, InvalidTaskStampException::class);
     }
 
+    /**
+     * @param TaskStamp[] $stamps
+     */
     public static function create(
         Task $task,
         array $stamps = [],

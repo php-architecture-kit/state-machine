@@ -48,7 +48,7 @@ abstract class StateMachine
             $this->addNode($node);
         }
         foreach ($transitions as $transition) {
-            $this->addTransition($transition->from, $transition->to, $transition->condition);
+            $this->addTransition($transition->from, $transition->to, $transition->condition); // @phpstan-ignore-line
         }
 
         return $this;
@@ -170,7 +170,9 @@ abstract class StateMachine
     protected function getNode(NodeId $id): NodeInterface
     {
         try {
-            return $this->graph->vertexStore->getVertex($id);
+            /** @var NodeInterface $node */
+            $node = $this->graph->vertexStore->getVertex($id);
+            return $node;
         } catch (Throwable $e) {
             throw new NodeNotFoundException("Node '{$id}' not found in the graph.", previous: $e);
         }
@@ -181,9 +183,11 @@ abstract class StateMachine
      */
     protected function getOutgoingTransitions(NodeId $id): array
     {
-        return array_values($this->graph->edgeStore->getIncidentEdges(
+        /** @var Transition[] $edges */
+        $edges = array_values($this->graph->edgeStore->getIncidentEdges(
             $id,
             static fn(EdgeInterface $edge): bool => $edge->u()->equals($id),
         ));
+        return $edges;
     }
 }

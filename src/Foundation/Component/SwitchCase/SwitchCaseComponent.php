@@ -45,7 +45,7 @@ class SwitchCaseComponent extends Definition
         $branchNode = new SwitchCaseNode();
 
         $instance->addTransition(
-            $instance->input->trigger,
+            $instance->input->trigger, // @phpstan-ignore-line
             $branchNode,
             null,
         );

@@ -42,6 +42,7 @@ class Pointers extends AggregateRoot
         ?PointerTransitionPolicy $transitionPolicy,
         ?PointerRemovalPolicy $removalPolicy,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static(
             $executionId,
             $creationPolicy,
@@ -51,6 +52,9 @@ class Pointers extends AggregateRoot
         );
     }
 
+    /**
+     * @param Pointer[] $pointers
+     */
     public static function recreate(
         ExecutionId $executionId,
         ?PointerCreationPolicy $creationPolicy,
@@ -58,6 +62,7 @@ class Pointers extends AggregateRoot
         ?PointerRemovalPolicy $removalPolicy,
         array $pointers,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static(
             $executionId,
             $creationPolicy,

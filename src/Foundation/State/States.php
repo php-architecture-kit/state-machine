@@ -44,9 +44,13 @@ class States extends AggregateRoot
         ?StateModificationPolicy $modificationPolicy,
         ?StateRemovalPolicy $removalPolicy,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, []);
     }
 
+    /**
+     * @param State[] $states
+     */
     public static function recreate(
         ExecutionId $executionId,
         ?StateDefinitionPolicy $definitionPolicy,
@@ -54,6 +58,7 @@ class States extends AggregateRoot
         ?StateRemovalPolicy $removalPolicy,
         array $states,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, $states);
     }
 

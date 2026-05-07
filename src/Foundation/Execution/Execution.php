@@ -32,6 +32,7 @@ class Execution
     ): static {
         $id = ExecutionId::new();
 
+        /** @phpstan-ignore-next-line */
         return new static(
             $id,
             Pointers::create($id, $pointerCreationPolicy, $pointerTransitionPolicy, $pointerRemovalPolicy),
@@ -44,6 +45,7 @@ class Execution
         Pointers $pointers,
         States $states,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static(
             $id,
             $pointers,

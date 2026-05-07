@@ -32,6 +32,9 @@ readonly class NodeHandlerContext
         }
     }
 
+    /**
+     * @param TaskStamp[] $stamps
+     */
     public function dispatchTask(Task $task, array $stamps = []): void
     {
         Assert::eachInstanceOf($stamps, TaskStamp::class, InvalidTaskStampException::class);

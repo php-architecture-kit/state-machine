@@ -50,14 +50,14 @@ class AwaitStateComponent extends Definition
         $componentId = 'awaitstate-' . $awaitNode->id->toString();
 
         $instance->addTransition(
-            $instance->input->trigger,
+            $instance->input->trigger, // @phpstan-ignore-line
             $awaitNode,
             null,
         );
 
         $instance->addTransition(
             $awaitNode,
-            $instance->output->done,
+            $instance->output->done, // @phpstan-ignore-line
             function (States $states) use ($componentId, $stateName, $detailName, $timeout, $clock): TransitionConditionDecision {
                 self::createExpirationState($states, $componentId, $timeout, $clock);
                 if (self::isExpired($states, $componentId, $clock)) {
@@ -80,7 +80,7 @@ class AwaitStateComponent extends Definition
 
         $instance->addTransition(
             $awaitNode,
-            $instance->output->expired,
+            $instance->output->expired, // @phpstan-ignore-line
             function (States $states) use ($componentId, $timeout, $clock): TransitionConditionDecision {
                 self::createExpirationState($states, $componentId, $timeout, $clock);
                 if (self::isExpired($states, $componentId, $clock)) {

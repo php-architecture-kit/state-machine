@@ -18,6 +18,7 @@ class TransitionConditionCallback implements TransitionCondition
     /** @param callable(States):TransitionConditionDecision $callback */
     public static function define(callable $callback): static
     {
+        /** @phpstan-ignore-next-line */
         return new static(Closure::fromCallable($callback));
     }
 

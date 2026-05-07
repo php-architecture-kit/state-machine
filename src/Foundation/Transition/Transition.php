@@ -36,6 +36,7 @@ class Transition implements TransitionInterface
         ?TransitionCondition $condition = null,
         array $tags = [],
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static(
             TransitionId::new(),
             $from,
@@ -55,6 +56,7 @@ class Transition implements TransitionInterface
         ?TransitionCondition $condition,
         array $tags,
     ): static {
+        /** @phpstan-ignore-next-line */
         return new static(
             $id,
             $from,

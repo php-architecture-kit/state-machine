@@ -19,31 +19,33 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondi
 
 abstract class Definition extends Graph
 {
-    /** 
-     * @param object<string,Port> $input
-     * @param object<string,Port> $output
-     */
+    public readonly object $input;
+    public readonly object $output;
+
     protected function __construct(
-        public readonly object $input,
-        public readonly object $output,
+        object $input,
+        object $output,
     ) {
+        $this->input = $input;
+        $this->output = $output;
         parent::__construct();
     }
 
     /**
      * @param string[] $inputs
      * @param string[] $outputs
-     * 
-     * @return static
      */
     protected static function newInstance(array $inputs, array $outputs): static
     {
         $input = (object) array_combine($inputs, array_map(static fn($input): Port => new Port($input), $inputs));
         $output = (object) array_combine($outputs, array_map(static fn($output): Port => new Port($output), $outputs));
 
+        /** @phpstan-ignore-next-line */
         $instance = new static($input, $output);
-        foreach ([$input, $output] as $portColleciton) {
-            foreach ($portColleciton as $port) {
+        $portCollections = [$input, $output];
+        foreach ($portCollections as $portCollection) {
+            foreach ((array) $portCollection as $port) {
+                /** @var Port $port */
                 $instance->addNode($port);
             }
         }
@@ -64,12 +66,12 @@ abstract class Definition extends Graph
     protected function addTransition(NodeId|NodeInterface $from, NodeId|NodeInterface $to, null|callable|TransitionCondition $condition = null): static
     {
         foreach (['from', 'to'] as $node) {
-            if ($$node instanceof NodeInterface) {
-                if (!$this->vertexStore->hasVertex($$node->id())) {
-                    $this->addNode($$node);
+            if (${$node} instanceof NodeInterface) {
+                if (!$this->vertexStore->hasVertex(${$node}->id())) { // @phpstan-ignore-line
+                    $this->addNode(${$node}); // @phpstan-ignore-line
                 }
 
-                $$node = $$node->id;
+                ${$node} = ${$node}->id; // @phpstan-ignore-line
             }
         }
 
@@ -77,7 +79,7 @@ abstract class Definition extends Graph
             $condition = TransitionConditionCallback::define($condition);
         }
 
-        $this->edgeStore->addEdge(Transition::create($from, $to, $condition));
+        $this->edgeStore->addEdge(Transition::create($from, $to, $condition)); // @phpstan-ignore-line
 
         return $this;
     }

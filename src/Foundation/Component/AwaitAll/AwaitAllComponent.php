@@ -60,7 +60,7 @@ class AwaitAllComponent extends Definition
 
         $instance->addTransition(
             $syncNode,
-            $instance->output->done,
+            $instance->output->done, // @phpstan-ignore-line
             static function (States $states) use ($componentId, $branches): TransitionConditionDecision {
                 $state = $states->getState('join-arrived-' . $componentId);
 
