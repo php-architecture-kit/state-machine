@@ -48,8 +48,8 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineSuspendsWhileAwaitedStateIsAbsent(): void
     {
-        $startNodeId = NodeId::new();
-        $endNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node1");
+        $endNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node2");
         $component = AwaitStateComponent::create('user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());
@@ -67,8 +67,8 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesAfterAwaitedStateIsDefined(): void
     {
-        $startNodeId = NodeId::new();
-        $endNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node3");
+        $endNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node4");
         $component = AwaitStateComponent::create('user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());
@@ -88,8 +88,8 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineSuspendsWhenRequiredDetailMissing(): void
     {
-        $startNodeId = NodeId::new();
-        $endNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node5");
+        $endNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node6");
         $component = AwaitStateComponent::create('user_answer', 'value');
 
         $machine = $this->makeMachine($this->makeContainer());
@@ -109,8 +109,8 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesWhenRequiredDetailIsPresent(): void
     {
-        $startNodeId = NodeId::new();
-        $endNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node7");
+        $endNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node8");
         $component = AwaitStateComponent::create('user_answer', 'value');
 
         $machine = $this->makeMachine($this->makeContainer());
@@ -130,9 +130,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function pointerReachesExpiredNodeWhenTimeoutElapsed(): void
     {
-        $startNodeId = NodeId::new();
-        $doneNodeId = NodeId::new();
-        $expiredNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node9");
+        $doneNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node10");
+        $expiredNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node11");
 
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $afterTimeout = $start->add(new DateInterval('PT61S'));
@@ -163,8 +163,8 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesAfterMultipleSuspendsAndStateDefined(): void
     {
-        $startNodeId = NodeId::new();
-        $endNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node12");
+        $endNodeId = NodeId::create("state-machine.feature.foundation.component.awaitstate.awaitstate.node13");
         $component = AwaitStateComponent::create('user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());

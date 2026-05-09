@@ -14,19 +14,21 @@ abstract class Node implements NodeInterface
 {
     public readonly NodeId $id;
 
-    /** @var string[] */
-    private readonly array $tags;
-
     /**
+     * @param string $globallyUniqueName Unique name across all state machines - cannot be ever changed. Required format: {vendor}.{module}.{purpose}
      * @param string[] $tags
      */
     public function __construct(
-        ?NodeId $id = null,
-        array $tags = [],
+        public readonly string $globallyUniqueName,
+        public readonly array $tags = [],
+        public readonly TransitionSelectionStrategy $transitionStrategy = new AllValidTransitionsStrategy(),
     ) {
+        if (!preg_match('/^[a-zA-Z0-9\-_]+(\.[a-zA-Z0-9\-_]+)*$/', $globallyUniqueName)) {
+            throw new InvalidNodeException('Globally unique name must be in format {vendor}.{module}.{purpose}');
+        }
+        $this->id = NodeId::create($globallyUniqueName);
+
         Assert::eachString($tags, InvalidNodeException::class);
-        $this->id = $id ?? NodeId::new();
-        $this->tags = $tags;
     }
 
     public function id(): NodeId
@@ -45,6 +47,6 @@ abstract class Node implements NodeInterface
 
     public function transitionStrategy(): TransitionSelectionStrategy
     {
-        return new AllValidTransitionsStrategy();
+        return $this->transitionStrategy;
     }
 }

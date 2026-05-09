@@ -21,7 +21,7 @@ class SingleTransitionStrategyTest extends TestCase
 
     private function makeTransition(?NodeId $to = null): Transition
     {
-        return Transition::create(NodeId::new(), $to ?? NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node1"), $to ?? NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node2"));
     }
 
     #[Test]
@@ -65,9 +65,9 @@ class SingleTransitionStrategyTest extends TestCase
     {
         $strategy = new SingleTransitionStrategy();
         $execution = Execution::create();
-        $startNodeId = NodeId::new();
+        $startNodeId = NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node3");
         $pointer = $execution->pointers->startAt($startNodeId);
-        $targetNodeId = NodeId::new();
+        $targetNodeId = NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node4");
         $output = $this->makeOutput([$this->makeTransition($targetNodeId)]);
 
         $strategy->transitionToNextNodes($execution, $pointer, $output);
@@ -80,7 +80,7 @@ class SingleTransitionStrategyTest extends TestCase
     {
         $strategy = new SingleTransitionStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node5"));
         $output = $this->makeOutput([$this->makeTransition()]);
 
         $strategy->transitionToNextNodes($execution, $pointer, $output);

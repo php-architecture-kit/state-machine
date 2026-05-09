@@ -16,7 +16,7 @@ class TransitionSelectionOutputTest extends TestCase
 {
     private function makeTransition(): Transition
     {
-        return Transition::create(NodeId::new(), NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.output.transit.node1"), NodeId::create("state-machine.unit.foundation.transition.strategy.output.transit.node2"));
     }
 
     #[Test]

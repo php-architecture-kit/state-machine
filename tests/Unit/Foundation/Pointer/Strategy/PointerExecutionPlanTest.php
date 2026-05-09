@@ -15,7 +15,7 @@ class PointerExecutionPlanTest extends TestCase
 {
     private function makePointer(): Pointer
     {
-        return Pointer::create(ExecutionId::new(), NodeId::new());
+        return Pointer::create(ExecutionId::new(), NodeId::create("state-machine.unit.foundation.pointer.strategy.pointerexecutionp.node1"));
     }
 
     #[Test]

@@ -21,7 +21,7 @@ class RejectStrategyTest extends TestCase
 
     private function makeTransition(): Transition
     {
-        return Transition::create(NodeId::new(), NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.reject.node1"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.reject.node2"));
     }
 
     #[Test]
@@ -74,7 +74,7 @@ class RejectStrategyTest extends TestCase
     {
         $strategy = new RejectStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.reject.node3"));
         $output = $this->makeOutput([], [], [$this->makeTransition()]);
 
         $strategy->transitionToNextNodes($execution, $pointer, $output);
@@ -88,8 +88,8 @@ class RejectStrategyTest extends TestCase
     {
         $strategy = new RejectStrategy();
         $execution = Execution::create();
-        $pointer1 = $execution->pointers->startAt(NodeId::new());
-        $pointer2 = $execution->pointers->startAt(NodeId::new());
+        $pointer1 = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.reject.node4"));
+        $pointer2 = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.reject.node5"));
         $output = $this->makeOutput([], [], [$this->makeTransition()]);
 
         $strategy->transitionToNextNodes($execution, $pointer1, $output);

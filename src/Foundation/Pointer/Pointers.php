@@ -14,6 +14,7 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Transition\CannotT
 use PhpArchitecture\Technical\Assert;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Creation\CannotForkPointerException;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Identity\PointerId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerCreationPolicy;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerRemovalPolicy;
@@ -95,27 +96,18 @@ class Pointers extends AggregateRoot
         $this->recordEvent(new PointerRemovedEvent($pointerId, $pointer->nodeId, $pointer->currentStep));
     }
 
-    public function forkTo(PointerId $pointerId, NodeId ...$to): void
+    public function fork(PointerId $pointerId): Pointer
     {
         $pointer = $this->pointers[$pointerId->toString()] ?? null;
         if (null === $pointer) {
-            throw new CannotTransitionPointerException("Requested Pointer to fork does not exists in pointers collection.");
+            throw new CannotForkPointerException("Requested Pointer to fork does not exists in pointers collection.");
         }
 
-        if (count($to) === 0) {
-            throw new CannotTransitionPointerException("At least one target node must be provided for fork.");
-        }
+        $forkedPointer = $pointer->fork();
+        $this->pointers[$forkedPointer->id->toString()] = $forkedPointer;
+        $this->recordEvent(new PointerForkedEvent($pointerId, $forkedPointer->id, $forkedPointer->nodeId));
 
-        $lastNodeId = $pointer->nodeId;
-
-        foreach ($to as $nodeId) {
-            $forkedPointer = $pointer->fork();
-            $this->pointers[$forkedPointer->id->toString()] = $forkedPointer;
-            $this->recordEvent(new PointerForkedEvent($pointerId, $forkedPointer->id, $nodeId));
-
-            $forkedPointer->step($nodeId);
-            $this->recordEvent(new PointerTransitionedEvent($forkedPointer->id, $lastNodeId, $nodeId, $forkedPointer->currentStep));
-        }
+        return $forkedPointer;
     }
 
     public function transition(PointerId $pointerId, NodeId ...$to): void

@@ -21,7 +21,7 @@ class WaitAndForkStrategyTest extends TestCase
 
     private function makeTransition(?NodeId $to = null): Transition
     {
-        return Transition::create(NodeId::new(), $to ?? NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node1"), $to ?? NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node2"));
     }
 
     #[Test]
@@ -65,9 +65,9 @@ class WaitAndForkStrategyTest extends TestCase
     {
         $strategy = new WaitAndForkStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
-        $target1 = NodeId::new();
-        $target2 = NodeId::new();
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node3"));
+        $target1 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node4");
+        $target2 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node5");
         $output = $this->makeOutput(
             [$this->makeTransition($target1), $this->makeTransition($target2)],
             [$this->makeTransition()],
@@ -84,8 +84,8 @@ class WaitAndForkStrategyTest extends TestCase
     {
         $strategy = new WaitAndForkStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
-        $target = NodeId::new();
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node6"));
+        $target = NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node7");
         $output = $this->makeOutput(
             [$this->makeTransition($target)],
             [$this->makeTransition()],
@@ -107,7 +107,7 @@ class WaitAndForkStrategyTest extends TestCase
     {
         $strategy = new WaitAndForkStrategy();
         $execution = Execution::create();
-        $startNode = NodeId::new();
+        $startNode = NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitan.node8");
         $pointer = $execution->pointers->startAt($startNode);
         $output = $this->makeOutput(
             [$this->makeTransition()],

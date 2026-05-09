@@ -17,7 +17,7 @@ class TaskKeyTest extends TestCase
     private function makeKey(string $taskName = 'MyTask'): TaskKey
     {
         return new TaskKey(
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.task.identity.taskkeytest.node1"),
             ExecutionId::new(),
             PointerId::new(),
             $taskName,
@@ -27,7 +27,7 @@ class TaskKeyTest extends TestCase
     #[Test]
     public function constructorStoresAllProperties(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.task.identity.taskkeytest.node2");
         $executionId = ExecutionId::new();
         $pointerId = PointerId::new();
 
@@ -42,7 +42,7 @@ class TaskKeyTest extends TestCase
     #[Test]
     public function toStringReturnsTaskPrefixedFormat(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.task.identity.taskkeytest.node3");
         $executionId = ExecutionId::new();
         $pointerId = PointerId::new();
 
@@ -82,7 +82,7 @@ class TaskKeyTest extends TestCase
     #[Test]
     public function fromStringThrowsInvalidTaskKeyFormatExceptionWhenPrefixIsNotTask(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.task.identity.taskkeytest.node4");
         $executionId = ExecutionId::new();
         $pointerId = PointerId::new();
 

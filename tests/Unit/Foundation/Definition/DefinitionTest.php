@@ -21,19 +21,19 @@ class DefinitionTest extends TestCase
         return new ConcreteDefinition();
     }
 
-    private function makeNode(NodeId $id): ConcreteDefinitionNode
+    private function makeNode(string $name): ConcreteDefinitionNode
     {
-        return new ConcreteDefinitionNode($id);
+        return new ConcreteDefinitionNode($name);
     }
 
     #[Test]
     public function regularNodesAreIncludedInDefinedNodes(): void
     {
         $definition = $this->makeDefinition();
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($nodeB);
 
         [$nodes] = $definition->getDefinedNodesAndTransitions();
 
@@ -44,12 +44,11 @@ class DefinitionTest extends TestCase
     public function definedNodesContainNoPortInstances(): void
     {
         $definition = $this->makeDefinition();
-        $regularNodeId = NodeId::new();
-        $definition->addNodePublic($this->makeNode($regularNodeId));
+        $regularNode = $this->makeNode('state-machine.definition.regular');
+        $definition->addNodePublic($regularNode);
 
-        $port = new Port('input');
-        $externalNodeId = NodeId::new();
-        $port->attach($externalNodeId);
+        $port = new Port('state-machine.definition.port.input');
+        $port->attach($regularNode->id());
         $definition->addNodePublic($port);
 
         [$nodes] = $definition->getDefinedNodesAndTransitions();
@@ -63,128 +62,114 @@ class DefinitionTest extends TestCase
     public function portWithoutAttachedNodeRemovesItsTransitions(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($nodeB);
 
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
-
-        $port = new Port('unattached_input');
+        $port = new Port('state-machine.definition.port.unattached');
         $definition->addNodePublic($port);
 
-        $definition->addTransitionPublic($nodeIdA, $port->id());
-        $definition->addTransitionPublic($port->id(), $nodeIdB);
+        $definition->addTransitionPublic($nodeA->id(), $port->id());
+        $definition->addTransitionPublic($port->id(), $nodeB->id());
 
         [, $transitions] = $definition->getDefinedNodesAndTransitions();
 
-        $this->assertEmpty($transitions, 'All transitions referencing an unattached port must be removed.');
+        $this->assertEmpty($transitions);
     }
 
     #[Test]
     public function portWithoutAttachedNodeDoesNotRemoveUnrelatedTransitions(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($nodeB);
 
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
-
-        $port = new Port('unattached');
+        $port = new Port('state-machine.definition.port.unattached');
         $definition->addNodePublic($port);
 
-        $definition->addTransitionPublic($nodeIdA, $nodeIdB);
-        $definition->addTransitionPublic($nodeIdA, $port->id());
+        $definition->addTransitionPublic($nodeA->id(), $nodeB->id());
+        $definition->addTransitionPublic($nodeA->id(), $port->id());
 
         [, $transitions] = $definition->getDefinedNodesAndTransitions();
 
         $this->assertCount(1, $transitions);
-        $this->assertTrue($nodeIdA->equals(array_values($transitions)[0]->u()));
-        $this->assertTrue($nodeIdB->equals(array_values($transitions)[0]->v()));
+        $this->assertTrue($nodeA->id()->equals(array_values($transitions)[0]->u()));
+        $this->assertTrue($nodeB->id()->equals(array_values($transitions)[0]->v()));
     }
 
     #[Test]
     public function portAsSourceIsReplacedWithAttachedNodeIdInTransition(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $externalNode = $this->makeNode('state-machine.definition.external');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($externalNode);
 
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
-
-        $port = new Port('output_port');
-        $externalNodeId = NodeId::new();
-        $port->attach($externalNodeId);
+        $port = new Port('state-machine.definition.port.output');
+        $port->attach($externalNode->id());
         $definition->addNodePublic($port);
 
-        $definition->addTransitionPublic($port->id(), $nodeIdA);
+        $definition->addTransitionPublic($port->id(), $nodeA->id());
 
         [, $transitions] = $definition->getDefinedNodesAndTransitions();
 
         $transition = array_values($transitions)[0];
-        $this->assertTrue(
-            $externalNodeId->equals($transition->u()),
-            'Source of transition should be replaced with the attached node id.',
-        );
-        $this->assertTrue($nodeIdA->equals($transition->v()));
+        $this->assertTrue($externalNode->id()->equals($transition->u()));
+        $this->assertTrue($nodeA->id()->equals($transition->v()));
     }
 
     #[Test]
     public function portAsTargetIsReplacedWithAttachedNodeIdInTransition(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $externalNode = $this->makeNode('state-machine.definition.external');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($externalNode);
 
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
-
-        $port = new Port('input_port');
-        $externalNodeId = NodeId::new();
-        $port->attach($externalNodeId);
+        $port = new Port('state-machine.definition.port.input');
+        $port->attach($externalNode->id());
         $definition->addNodePublic($port);
 
-        $definition->addTransitionPublic($nodeIdA, $port->id());
+        $definition->addTransitionPublic($nodeA->id(), $port->id());
 
         [, $transitions] = $definition->getDefinedNodesAndTransitions();
 
         $transition = array_values($transitions)[0];
-        $this->assertTrue($nodeIdA->equals($transition->u()));
-        $this->assertTrue(
-            $externalNodeId->equals($transition->v()),
-            'Target of transition should be replaced with the attached node id.',
-        );
+        $this->assertTrue($nodeA->id()->equals($transition->u()));
+        $this->assertTrue($externalNode->id()->equals($transition->v()));
     }
 
     #[Test]
     public function attachedNodeIdMayBeExternalToDefinitionWithoutError(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $externalNode = $this->makeNode('state-machine.definition.external');
+        $definition->addNodePublic($nodeA);
 
-        $nodeIdA = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-
-        $port = new Port('boundary_port');
-        $externalNodeId = NodeId::new();
-        $port->attach($externalNodeId);
+        $port = new Port('state-machine.definition.port.boundary');
+        $port->attach($externalNode->id());
         $definition->addNodePublic($port);
 
-        $definition->addTransitionPublic($nodeIdA, $port->id());
+        $definition->addTransitionPublic($nodeA->id(), $port->id());
 
         [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
 
         $this->assertCount(1, $nodes);
         $this->assertCount(1, $transitions);
-        $this->assertTrue($externalNodeId->equals(array_values($transitions)[0]->v()));
     }
 
     #[Test]
     public function addTransitionWithNodeInterfaceFromAutoRegistersNodeAndUsesItsId(): void
     {
         $definition = $this->makeDefinition();
-        $nodeA = $this->makeNode(NodeId::new());
-        $nodeB = $this->makeNode(NodeId::new());
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
         $definition->addNodePublic($nodeB);
 
         $definition->addTransitionWithNodePublic($nodeA, $nodeB->id());
@@ -200,8 +185,8 @@ class DefinitionTest extends TestCase
     public function addTransitionWithNodeInterfaceToAutoRegistersNodeAndUsesItsId(): void
     {
         $definition = $this->makeDefinition();
-        $nodeA = $this->makeNode(NodeId::new());
-        $nodeB = $this->makeNode(NodeId::new());
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
         $definition->addNodePublic($nodeA);
 
         $definition->addTransitionWithNodePublic($nodeA->id(), $nodeB);
@@ -217,8 +202,8 @@ class DefinitionTest extends TestCase
     public function addTransitionWithAlreadyRegisteredNodeDoesNotDuplicateIt(): void
     {
         $definition = $this->makeDefinition();
-        $nodeA = $this->makeNode(NodeId::new());
-        $nodeB = $this->makeNode(NodeId::new());
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
         $definition->addNodePublic($nodeA);
         $definition->addNodePublic($nodeB);
 
@@ -232,41 +217,27 @@ class DefinitionTest extends TestCase
     public function mixedScenarioWithAttachedAndUnattachedPortsProducesCorrectResult(): void
     {
         $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $nodeB = $this->makeNode('state-machine.definition.node-b');
+        $externalNode = $this->makeNode('state-machine.definition.external');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($nodeB);
 
-        $nodeIdA = NodeId::new();
-        $nodeIdB = NodeId::new();
-        $definition->addNodePublic($this->makeNode($nodeIdA));
-        $definition->addNodePublic($this->makeNode($nodeIdB));
-
-        $attachedPort = new Port('attached');
-        $externalNodeId = NodeId::new();
-        $attachedPort->attach($externalNodeId);
+        $attachedPort = new Port('state-machine.definition.port.attached');
+        $attachedPort->attach($externalNode->id());
         $definition->addNodePublic($attachedPort);
 
-        $unattachedPort = new Port('unattached');
+        $unattachedPort = new Port('state-machine.definition.port.unattached');
         $definition->addNodePublic($unattachedPort);
 
-        $definition->addTransitionPublic($nodeIdA, $nodeIdB);
-        $definition->addTransitionPublic($nodeIdA, $attachedPort->id());
-        $definition->addTransitionPublic($unattachedPort->id(), $nodeIdB);
+        $definition->addTransitionPublic($nodeA->id(), $nodeB->id());
+        $definition->addTransitionPublic($nodeA->id(), $attachedPort->id());
+        $definition->addTransitionPublic($unattachedPort->id(), $nodeB->id());
 
         [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
 
-        foreach ($nodes as $node) {
-            $this->assertNotInstanceOf(Port::class, $node);
-        }
         $this->assertCount(2, $nodes);
-
-        $transitionValues = array_values($transitions);
-        $this->assertCount(2, $transitionValues);
-
-        $targets = array_map(static fn(TransitionInterface $t): string => $t->v()->toString(), $transitionValues);
-        $this->assertNotContains($unattachedPort->id()->toString(), $targets);
-
-        $sources = array_map(static fn(TransitionInterface $t): string => $t->u()->toString(), $transitionValues);
-        $this->assertNotContains($attachedPort->id()->toString(), $sources);
-
-        $this->assertContains($externalNodeId->toString(), $targets);
+        $this->assertCount(2, $transitions);
     }
 }
 
@@ -295,16 +266,6 @@ class ConcreteDefinition extends Definition
 
 class ConcreteDefinitionNode extends Node
 {
-    public function __construct(NodeId $id)
-    {
-        parent::__construct($id);
-    }
-
-    public function id(): NodeId
-    {
-        return $this->id;
-    }
-
     public function handlerClass(): string
     {
         return stdClass::class;

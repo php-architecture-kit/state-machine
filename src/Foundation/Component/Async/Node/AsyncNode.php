@@ -12,16 +12,20 @@ use Closure;
 class AsyncNode extends Node
 {
     /**
+     * @param string                    $globallyUniqueName Unique name across all state machines
      * @param string                    $stateName   State key to await after task dispatch. Passed automatically
      *                                               as AwaitStateStamp to the dispatched Task envelope.
      * @param Closure(States): Task    $taskFactory Factory invoked once when the pointer passes this node.
      *                                               Receives current States and must return a Task to dispatch.
+     * @param string[]                  $tags
      */
     public function __construct(
+        string $globallyUniqueName,
         public readonly string $stateName,
         public readonly Closure $taskFactory,
+        array $tags = [],
     ) {
-        parent::__construct();
+        parent::__construct($globallyUniqueName, $tags);
     }
 
     public function handlerClass(): string

@@ -46,7 +46,7 @@ class PointersTest extends TestCase
     public function recreateIndexesPointersByStringId(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node1");
         $pointer = Pointer::create($executionId, $nodeId);
 
         $pointers = Pointers::recreate($executionId, null, null, null, [$pointer]);
@@ -58,7 +58,7 @@ class PointersTest extends TestCase
     public function startAtAddsPointerToCollection(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node2");
         $pointers = $this->makePointers($executionId);
 
         $pointer = $pointers->startAt($nodeId);
@@ -70,7 +70,7 @@ class PointersTest extends TestCase
     #[Test]
     public function startAtRecordsPointerCreatedEvent(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node3");
         $pointers = $this->makePointers();
 
         $pointers->startAt($nodeId);
@@ -84,7 +84,7 @@ class PointersTest extends TestCase
     public function startAtCallsCreationPolicyWhenSet(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node4");
         $policyCalled = false;
         $policy = new class($policyCalled) implements \PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerCreationPolicy {
             public function __construct(private bool &$called) {}
@@ -103,7 +103,7 @@ class PointersTest extends TestCase
     #[Test]
     public function removeDeletesPointerFromCollection(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node5");
         $pointers = $this->makePointers();
         $pointer = $pointers->startAt($nodeId);
 
@@ -115,7 +115,7 @@ class PointersTest extends TestCase
     #[Test]
     public function removeRecordsPointerRemovedEvent(): void
     {
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node6");
         $pointers = $this->makePointers();
         $pointer = $pointers->startAt($nodeId);
         $pointers->releaseEvents();
@@ -141,7 +141,7 @@ class PointersTest extends TestCase
     public function removeCallsRemovalPolicyWhenSet(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node7");
         $policyCalled = false;
         $policy = new class($policyCalled) implements \PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerRemovalPolicy {
             public function __construct(private bool &$called) {}
@@ -159,66 +159,12 @@ class PointersTest extends TestCase
     }
 
     #[Test]
-    public function forkToCreatesForkedPointersAndKeepsOriginal(): void
-    {
-        $nodeId = NodeId::new();
-        $pointers = $this->makePointers();
-        $pointer = $pointers->startAt($nodeId);
-        $pointers->releaseEvents();
-
-        $target1 = NodeId::new();
-        $target2 = NodeId::new();
-        $pointers->forkTo($pointer->id, $target1, $target2);
-
-        $this->assertCount(3, $pointers->pointers);
-    }
-
-    #[Test]
-    public function forkToRecordsForkedAndTransitionedEvents(): void
-    {
-        $nodeId = NodeId::new();
-        $pointers = $this->makePointers();
-        $pointer = $pointers->startAt($nodeId);
-        $pointers->releaseEvents();
-
-        $pointers->forkTo($pointer->id, NodeId::new(), NodeId::new());
-
-        $events = $pointers->getEvents();
-        $forkedEvents = array_filter($events, static fn($e) => $e instanceof PointerForkedEvent);
-        $transitionedEvents = array_filter($events, static fn($e) => $e instanceof PointerTransitionedEvent);
-
-        $this->assertCount(2, $forkedEvents);
-        $this->assertCount(2, $transitionedEvents);
-    }
-
-    #[Test]
-    public function forkToThrowsCannotTransitionPointerExceptionForNonexistentPointer(): void
-    {
-        $pointers = $this->makePointers();
-
-        $this->expectException(CannotTransitionPointerException::class);
-
-        $pointers->forkTo(PointerId::new(), NodeId::new());
-    }
-
-    #[Test]
-    public function forkToThrowsCannotTransitionPointerExceptionWhenNoTargetsProvided(): void
-    {
-        $pointers = $this->makePointers();
-        $pointer = $pointers->startAt(NodeId::new());
-
-        $this->expectException(CannotTransitionPointerException::class);
-
-        $pointers->forkTo($pointer->id);
-    }
-
-    #[Test]
     public function transitionToSingleNodeMovesPointerAndRecordsTransitionedEvent(): void
     {
         $pointers = $this->makePointers();
-        $pointer = $pointers->startAt(NodeId::new());
+        $pointer = $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node16"));
         $pointers->releaseEvents();
-        $targetNodeId = NodeId::new();
+        $targetNodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node17");
 
         $pointers->transition($pointer->id, $targetNodeId);
 
@@ -234,10 +180,10 @@ class PointersTest extends TestCase
     public function transitionToMultipleNodesForksAndRemovesOriginal(): void
     {
         $pointers = $this->makePointers();
-        $pointer = $pointers->startAt(NodeId::new());
+        $pointer = $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node18"));
         $pointers->releaseEvents();
 
-        $pointers->transition($pointer->id, NodeId::new(), NodeId::new());
+        $pointers->transition($pointer->id, NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node19"), NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node20"));
 
         $this->assertCount(2, $pointers->pointers);
         $this->assertArrayNotHasKey($pointer->id->toString(), $pointers->pointers);
@@ -250,14 +196,14 @@ class PointersTest extends TestCase
 
         $this->expectException(CannotTransitionPointerException::class);
 
-        $pointers->transition(PointerId::new(), NodeId::new());
+        $pointers->transition(PointerId::new(), NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node21"));
     }
 
     #[Test]
     public function transitionThrowsCannotTransitionPointerExceptionWhenNoTargetsProvided(): void
     {
         $pointers = $this->makePointers();
-        $pointer = $pointers->startAt(NodeId::new());
+        $pointer = $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node22"));
 
         $this->expectException(CannotTransitionPointerException::class);
 
@@ -277,9 +223,9 @@ class PointersTest extends TestCase
             }
         };
         $pointers = Pointers::create($executionId, null, $policy, null);
-        $pointer = $pointers->startAt(NodeId::new());
+        $pointer = $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node23"));
 
-        $pointers->transition($pointer->id, NodeId::new());
+        $pointers->transition($pointer->id, NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node24"));
 
         $this->assertTrue($policyCalled);
     }

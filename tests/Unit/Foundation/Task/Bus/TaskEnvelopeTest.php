@@ -31,7 +31,7 @@ class TaskEnvelopeTest extends TestCase
 
     private function makeKey(): TaskKey
     {
-        return new TaskKey(NodeId::new(), ExecutionId::new(), PointerId::new(), 'MyTask');
+        return new TaskKey(NodeId::create("state-machine.unit.foundation.task.bus.taskenvelopetest.node1"), ExecutionId::new(), PointerId::new(), 'MyTask');
     }
 
     #[Test]

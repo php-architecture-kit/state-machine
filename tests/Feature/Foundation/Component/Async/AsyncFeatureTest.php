@@ -65,8 +65,8 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function componentSuspendsAfterDispatchUntilStateArrives(): void
     {
-        $startId = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node1");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node2");
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -92,8 +92,8 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function componentCompletesAfterStateIsSet(): void
     {
-        $startId = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node3");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node4");
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -124,8 +124,8 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function dispatchedTaskEnvelopeContainsAwaitStateStamp(): void
     {
-        $startId = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node5");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node6");
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -161,8 +161,8 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function taskFactoryReceivesStates(): void
     {
-        $startId = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node7");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node8");
 
         $receivedStates = null;
         $component = AsyncComponent::create(

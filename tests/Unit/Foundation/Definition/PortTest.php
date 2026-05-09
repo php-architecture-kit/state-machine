@@ -12,17 +12,17 @@ use PHPUnit\Framework\TestCase;
 class PortTest extends TestCase
 {
     #[Test]
-    public function nameIsStoredCorrectly(): void
+    public function globallyUniqueNameIsStoredCorrectly(): void
     {
-        $port = new Port('input_port');
+        $port = new Port('state-machine.port.input');
 
-        $this->assertSame('input_port', $port->name);
+        $this->assertSame('state-machine.port.input', $port->globallyUniqueName);
     }
 
     #[Test]
     public function attachedNodeIsNullByDefault(): void
     {
-        $port = new Port('my_port');
+        $port = new Port('state-machine.port.test');
 
         $this->assertNull($port->attachedNode);
     }
@@ -30,24 +30,16 @@ class PortTest extends TestCase
     #[Test]
     public function idReturnsNodeIdInstance(): void
     {
-        $port = new Port('my_port');
+        $port = new Port('state-machine.port.test');
 
         $this->assertInstanceOf(NodeId::class, $port->id());
     }
 
     #[Test]
-    public function tagsContainPortTag(): void
-    {
-        $port = new Port('my_port');
-
-        $this->assertContains('port', $port->tags());
-    }
-
-    #[Test]
     public function attachSetsAttachedNode(): void
     {
-        $port = new Port('my_port');
-        $nodeId = NodeId::new();
+        $port = new Port('state-machine.port.test');
+        $nodeId = NodeId::create("state-machine.unit.foundation.definition.porttest.node1");
 
         $port->attach($nodeId);
 
@@ -57,9 +49,9 @@ class PortTest extends TestCase
     #[Test]
     public function attachOverwritesPreviouslyAttachedNode(): void
     {
-        $port = new Port('my_port');
-        $firstNodeId = NodeId::new();
-        $secondNodeId = NodeId::new();
+        $port = new Port('state-machine.port.test');
+        $firstNodeId = NodeId::create("state-machine.unit.foundation.definition.porttest.node2");
+        $secondNodeId = NodeId::create("state-machine.unit.foundation.definition.porttest.node3");
 
         $port->attach($firstNodeId);
         $port->attach($secondNodeId);

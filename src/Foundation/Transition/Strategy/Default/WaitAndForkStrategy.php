@@ -9,7 +9,7 @@ use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Pointer;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Output\TransitionSelectionOutput;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionStrategy;
-use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
+use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
 
 final class WaitAndForkStrategy implements TransitionStrategy
 {
@@ -23,9 +23,9 @@ final class WaitAndForkStrategy implements TransitionStrategy
         Pointer $pointer,
         TransitionSelectionOutput $transitionSelection,
     ): void {
-        $execution->pointers->forkTo(
-            $pointer->id,
-            ...array_map(static fn(Transition $t): NodeId => $t->to, $transitionSelection->goto),
+        $execution->pointers->transition(
+            $execution->pointers->fork($pointer->id)->id,
+            ...array_map(static fn(TransitionInterface $t): NodeId => $t->v(), $transitionSelection->goto),
         );
     }
 }

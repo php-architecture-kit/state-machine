@@ -14,19 +14,9 @@ use stdClass;
 
 class NodeTest extends TestCase
 {
-    private function makeNode(NodeId $id, array $tags = []): Node
+    private function makeNode(string $name, array $tags = []): Node
     {
-        return new class($id, $tags) extends Node {
-            public function __construct(NodeId $id, array $tags = [])
-            {
-                parent::__construct($id, $tags);
-            }
-
-            public function id(): NodeId
-            {
-                return $this->id;
-            }
-
+        return new class($name, $tags) extends Node {
             public function handlerClass(): string
             {
                 return stdClass::class;
@@ -35,9 +25,17 @@ class NodeTest extends TestCase
     }
 
     #[Test]
+    public function globallyUniqueNameIsStoredCorrectly(): void
+    {
+        $node = $this->makeNode('state-machine.node.test');
+
+        $this->assertSame('state-machine.node.test', $node->globallyUniqueName);
+    }
+
+    #[Test]
     public function tagsReturnsEmptyArrayByDefault(): void
     {
-        $node = $this->makeNode(NodeId::new());
+        $node = $this->makeNode('state-machine.node.test');
 
         $this->assertSame([], $node->tags());
     }
@@ -45,7 +43,7 @@ class NodeTest extends TestCase
     #[Test]
     public function tagsReturnsProvidedStringArray(): void
     {
-        $node = $this->makeNode(NodeId::new(), ['tagA', 'tagB']);
+        $node = $this->makeNode('state-machine.node.test', ['tagA', 'tagB']);
 
         $this->assertSame(['tagA', 'tagB'], $node->tags());
     }
@@ -55,13 +53,13 @@ class NodeTest extends TestCase
     {
         $this->expectException(InvalidNodeException::class);
 
-        $this->makeNode(NodeId::new(), [42]);
+        $this->makeNode('state-machine.node.test', [42]);
     }
 
     #[Test]
     public function transitionStrategyReturnsAllValidTransitionsStrategyByDefault(): void
     {
-        $node = $this->makeNode(NodeId::new());
+        $node = $this->makeNode('state-machine.node.test');
 
         $this->assertInstanceOf(AllValidTransitionsStrategy::class, $node->transitionStrategy());
     }
@@ -69,17 +67,17 @@ class NodeTest extends TestCase
     #[Test]
     public function handlerClassReturnsDefinedHandlerClass(): void
     {
-        $node = $this->makeNode(NodeId::new());
+        $node = $this->makeNode('state-machine.node.test');
 
         $this->assertSame(stdClass::class, $node->handlerClass());
     }
 
     #[Test]
-    public function idReturnsConstructedNodeId(): void
+    public function idReturnsNodeIdDerivedFromGloballyUniqueName(): void
     {
-        $id = NodeId::new();
-        $node = $this->makeNode($id);
+        $node = $this->makeNode('state-machine.node.test');
 
-        $this->assertTrue($id->equals($node->id()));
+        $this->assertInstanceOf(NodeId::class, $node->id());
+        $this->assertSame(5, $node->id()->getVersion());
     }
 }

@@ -31,8 +31,8 @@ class AllPointersUntilBlockedStrategyTest extends TestCase
         $strategy = new AllPointersUntilBlockedStrategy();
         $executionId = ExecutionId::new();
         $pointers = Pointers::create($executionId, null, null, null);
-        $pointers->startAt(NodeId::new());
-        $pointers->startAt(NodeId::new());
+        $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.strategy.default.allpointe.node1"));
+        $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.strategy.default.allpointe.node2"));
 
         $plans = $strategy->select($pointers);
 
@@ -44,7 +44,7 @@ class AllPointersUntilBlockedStrategyTest extends TestCase
     {
         $strategy = new AllPointersUntilBlockedStrategy();
         $pointers = Pointers::create(ExecutionId::new(), null, null, null);
-        $pointers->startAt(NodeId::new());
+        $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.strategy.default.allpointe.node3"));
 
         $plans = $strategy->select($pointers);
 
@@ -57,7 +57,7 @@ class AllPointersUntilBlockedStrategyTest extends TestCase
         $strategy = new AllPointersUntilBlockedStrategy();
         $executionId = ExecutionId::new();
         $pointers = Pointers::create($executionId, null, null, null);
-        $pointer = $pointers->startAt(NodeId::new());
+        $pointer = $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.strategy.default.allpointe.node4"));
 
         $plans = $strategy->select($pointers);
 
@@ -69,7 +69,7 @@ class AllPointersUntilBlockedStrategyTest extends TestCase
     {
         $strategy = new AllPointersUntilBlockedStrategy();
         $pointers = Pointers::create(ExecutionId::new(), null, null, null);
-        $pointers->startAt(NodeId::new());
+        $pointers->startAt(NodeId::create("state-machine.unit.foundation.pointer.strategy.default.allpointe.node5"));
 
         $plans = $strategy->select($pointers);
 

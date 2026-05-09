@@ -30,9 +30,9 @@ class AsyncComponentTest extends TestCase
 
     private function attachPorts(AsyncComponent $component): void
     {
-        $component->input->trigger->attach(NodeId::new());
-        $component->output->done->attach(NodeId::new());
-        $component->output->expired->attach(NodeId::new());
+        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.async.asynccomponenttest.node1"));
+        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.async.asynccomponenttest.node2"));
+        $component->output->expired->attach(NodeId::create("state-machine.unit.foundation.component.async.asynccomponenttest.node3"));
     }
 
     #[Test]

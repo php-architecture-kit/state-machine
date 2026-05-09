@@ -59,7 +59,7 @@ class AsyncComponent extends Definition
             outputs: ['done', 'expired'],
         );
 
-        $asyncNode = new AsyncNode($stateName, $taskFactory);
+        $asyncNode = new AsyncNode("php-architecture.async.{$stateName}", $stateName, $taskFactory);
 
         $awaitComponent = AwaitStateComponent::create($stateName, $detailName, $timeout, $clock);
         $awaitComponent->input->trigger->attach($asyncNode->id); // @phpstan-ignore-line

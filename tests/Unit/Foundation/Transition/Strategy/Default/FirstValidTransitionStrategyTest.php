@@ -31,7 +31,7 @@ class FirstValidTransitionStrategyTest extends TestCase
 
     private function makePointer(): Pointer
     {
-        return Pointer::create(ExecutionId::new(), NodeId::new());
+        return Pointer::create(ExecutionId::new(), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node1"));
     }
 
     private function makeStates(): States
@@ -43,8 +43,8 @@ class FirstValidTransitionStrategyTest extends TestCase
     public function firstUnconditionalTransitionIsReturnedImmediately(): void
     {
         $strategy = new FirstValidTransitionStrategy();
-        $first = Transition::create(NodeId::new(), NodeId::new());
-        $second = Transition::create(NodeId::new(), NodeId::new());
+        $first = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node2"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node3"));
+        $second = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node4"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node5"));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$first, $second]);
 
@@ -57,11 +57,11 @@ class FirstValidTransitionStrategyTest extends TestCase
     {
         $strategy = new FirstValidTransitionStrategy();
         $accepted = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node6"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node7"),
             $this->makeCondition(TransitionConditionDecision::Accepted),
         );
-        $second = Transition::create(NodeId::new(), NodeId::new());
+        $second = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node8"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node9"));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$accepted, $second]);
 
@@ -74,13 +74,13 @@ class FirstValidTransitionStrategyTest extends TestCase
     {
         $strategy = new FirstValidTransitionStrategy();
         $waiting = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node10"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node11"),
             $this->makeCondition(TransitionConditionDecision::Wait),
         );
         $accepted = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node12"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node13"),
             $this->makeCondition(TransitionConditionDecision::Accepted),
         );
 
@@ -96,13 +96,13 @@ class FirstValidTransitionStrategyTest extends TestCase
     {
         $strategy = new FirstValidTransitionStrategy();
         $rejected = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node14"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node15"),
             $this->makeCondition(TransitionConditionDecision::Rejected),
         );
         $accepted = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node16"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node17"),
             $this->makeCondition(TransitionConditionDecision::Accepted),
         );
 
@@ -117,8 +117,8 @@ class FirstValidTransitionStrategyTest extends TestCase
     public function allRejectedTransitionsResultInEmptyGoto(): void
     {
         $strategy = new FirstValidTransitionStrategy();
-        $r1 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Rejected));
-        $r2 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Rejected));
+        $r1 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node18"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node19"), $this->makeCondition(TransitionConditionDecision::Rejected));
+        $r2 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node20"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node21"), $this->makeCondition(TransitionConditionDecision::Rejected));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$r1, $r2]);
 
@@ -130,8 +130,8 @@ class FirstValidTransitionStrategyTest extends TestCase
     public function allWaitingTransitionsResultInEmptyGoto(): void
     {
         $strategy = new FirstValidTransitionStrategy();
-        $w1 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Wait));
-        $w2 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Wait));
+        $w1 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node22"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node23"), $this->makeCondition(TransitionConditionDecision::Wait));
+        $w2 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node24"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.firstv.node25"), $this->makeCondition(TransitionConditionDecision::Wait));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$w1, $w2]);
 

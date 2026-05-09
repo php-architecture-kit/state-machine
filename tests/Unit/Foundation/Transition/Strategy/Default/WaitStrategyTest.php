@@ -21,7 +21,7 @@ class WaitStrategyTest extends TestCase
 
     private function makeTransition(): Transition
     {
-        return Transition::create(NodeId::new(), NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitst.node1"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitst.node2"));
     }
 
     #[Test]
@@ -74,7 +74,7 @@ class WaitStrategyTest extends TestCase
     {
         $strategy = new WaitStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.waitst.node3"));
         $originalNodeId = $pointer->nodeId->toString();
         $originalStep = $pointer->currentStep;
         $output = $this->makeOutput([], [$this->makeTransition()]);

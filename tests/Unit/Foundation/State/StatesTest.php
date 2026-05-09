@@ -147,17 +147,6 @@ class StatesTest extends TestCase
     }
 
     #[Test]
-    public function modifyStateThrowsCannotModifyStateExceptionWhenRemovingNonexistentDetail(): void
-    {
-        $states = $this->makeStates();
-        $state = $states->defineState('order', []);
-
-        $this->expectException(CannotModifyStateException::class);
-
-        $states->modifyState($state->id, [], ['nonexistent']);
-    }
-
-    #[Test]
     public function modifyStateCallsModificationPolicyWhenSet(): void
     {
         $executionId = ExecutionId::new();

@@ -15,6 +15,7 @@ final readonly class StateDefinedEvent implements DomainEvent
      */
     public function __construct(
         public StateId $stateId,
+        public string $stateName,
         public array $details,
     ) {}
 }

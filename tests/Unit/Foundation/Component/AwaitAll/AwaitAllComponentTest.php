@@ -25,9 +25,9 @@ class AwaitAllComponentTest extends TestCase
     private function attachAll(AwaitAllComponent $component, array $branches): void
     {
         foreach ($branches as $branch) {
-            $component->input->{$branch}->attach(NodeId::new());
+            $component->input->{$branch}->attach(NodeId::create("state-machine.unit.foundation.component.awaitall.awaitallcompone.node1"));
         }
-        $component->output->done->attach(NodeId::new());
+        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitall.awaitallcompone.node2"));
     }
 
     #[Test]

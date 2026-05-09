@@ -31,7 +31,7 @@ class AllValidTransitionsStrategyTest extends TestCase
 
     private function makePointer(): Pointer
     {
-        return Pointer::create(ExecutionId::new(), NodeId::new());
+        return Pointer::create(ExecutionId::new(), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node1"));
     }
 
     private function makeStates(): States
@@ -43,7 +43,7 @@ class AllValidTransitionsStrategyTest extends TestCase
     public function unconditionalTransitionGoesToGoto(): void
     {
         $strategy = new AllValidTransitionsStrategy();
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node2"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node3"));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$transition]);
 
@@ -57,8 +57,8 @@ class AllValidTransitionsStrategyTest extends TestCase
     {
         $strategy = new AllValidTransitionsStrategy();
         $transition = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node4"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node5"),
             $this->makeCondition(TransitionConditionDecision::Accepted),
         );
 
@@ -74,8 +74,8 @@ class AllValidTransitionsStrategyTest extends TestCase
     {
         $strategy = new AllValidTransitionsStrategy();
         $transition = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node6"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node7"),
             $this->makeCondition(TransitionConditionDecision::Wait),
         );
 
@@ -91,8 +91,8 @@ class AllValidTransitionsStrategyTest extends TestCase
     {
         $strategy = new AllValidTransitionsStrategy();
         $transition = Transition::create(
-            NodeId::new(),
-            NodeId::new(),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node8"),
+            NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node9"),
             $this->makeCondition(TransitionConditionDecision::Rejected),
         );
 
@@ -107,10 +107,10 @@ class AllValidTransitionsStrategyTest extends TestCase
     public function mixedTransitionsAreSortedIntoCorrectBuckets(): void
     {
         $strategy = new AllValidTransitionsStrategy();
-        $unconditional = Transition::create(NodeId::new(), NodeId::new());
-        $accepted = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Accepted));
-        $waiting = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Wait));
-        $rejected = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Rejected));
+        $unconditional = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node10"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node11"));
+        $accepted = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node12"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node13"), $this->makeCondition(TransitionConditionDecision::Accepted));
+        $waiting = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node14"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node15"), $this->makeCondition(TransitionConditionDecision::Wait));
+        $rejected = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node16"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node17"), $this->makeCondition(TransitionConditionDecision::Rejected));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [
             $unconditional, $accepted, $waiting, $rejected,
@@ -137,9 +137,9 @@ class AllValidTransitionsStrategyTest extends TestCase
     public function allAcceptedTransitionsGoToGoto(): void
     {
         $strategy = new AllValidTransitionsStrategy();
-        $t1 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Accepted));
-        $t2 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Accepted));
-        $t3 = Transition::create(NodeId::new(), NodeId::new(), $this->makeCondition(TransitionConditionDecision::Accepted));
+        $t1 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node18"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node19"), $this->makeCondition(TransitionConditionDecision::Accepted));
+        $t2 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node20"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node21"), $this->makeCondition(TransitionConditionDecision::Accepted));
+        $t3 = Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node22"), NodeId::create("state-machine.unit.foundation.transition.strategy.default.allval.node23"), $this->makeCondition(TransitionConditionDecision::Accepted));
 
         $output = $strategy->select($this->makePointer(), $this->makeStates(), [$t1, $t2, $t3]);
 

@@ -43,7 +43,7 @@ class AwaitAllComponent extends Definition
         $syncNode = new AwaitAllSyncNode();
 
         foreach ($branches as $branch) {
-            $arrivalNode = new AwaitAllArrivalNode($componentId, $branch);
+            $arrivalNode = new AwaitAllArrivalNode("php-architecture.await-all.{$componentId}.{$branch}", $componentId, $branch);
 
             $instance->addTransition(
                 $instance->input->{$branch},

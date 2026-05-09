@@ -41,10 +41,10 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function forkSpawnsOnePointerPerBranch(): void
     {
-        $startId = NodeId::new();
-        $endAId  = NodeId::new();
-        $endBId  = NodeId::new();
-        $endCId  = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node1");
+        $endAId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node2");
+        $endBId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node3");
+        $endCId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node4");
 
         $component = ParallelComponent::create(['a', 'b', 'c']);
         $component->input->trigger->attach($startId);
@@ -73,9 +73,9 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function forkCompletesWhenAllBranchesReachTerminalNodes(): void
     {
-        $startId = NodeId::new();
-        $endAId  = NodeId::new();
-        $endBId  = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node5");
+        $endAId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node6");
+        $endBId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node7");
 
         $component = ParallelComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
@@ -99,9 +99,9 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function originalPointerIsRemovedAfterFork(): void
     {
-        $startId = NodeId::new();
-        $endAId  = NodeId::new();
-        $endBId  = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node8");
+        $endAId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node9");
+        $endBId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node10");
 
         $component = ParallelComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
@@ -128,9 +128,9 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function twoBranchForkProducesExactlyTwoForkedEvents(): void
     {
-        $startId = NodeId::new();
-        $endAId  = NodeId::new();
-        $endBId  = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node11");
+        $endAId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node12");
+        $endBId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node13");
 
         $component = ParallelComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
@@ -158,10 +158,10 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function conditionalBranchesOnlyFireWhenPredicateMatches(): void
     {
-        $startId = NodeId::new();
-        $endAId  = NodeId::new();
-        $endBId  = NodeId::new();
-        $endCId  = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node14");
+        $endAId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node15");
+        $endBId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node16");
+        $endCId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node17");
 
         $component = ParallelComponent::create(
             ['a', 'b', 'c'],
@@ -195,9 +195,9 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function conditionalBranchBasedOnStateFiresCorrectly(): void
     {
-        $startId = NodeId::new();
-        $highId  = NodeId::new();
-        $lowId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node18");
+        $highId  = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node19");
+        $lowId   = NodeId::create("state-machine.feature.foundation.component.parallel.parallelfeat.node20");
 
         $component = ParallelComponent::create(
             ['high', 'low'],

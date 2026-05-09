@@ -24,19 +24,9 @@ use stdClass;
 
 class NodeHandlerContextTest extends TestCase
 {
-    private function makeNode(NodeId $id): Node
+    private function makeNode(string $name): Node
     {
-        return new class($id) extends Node {
-            public function __construct(NodeId $id)
-            {
-                parent::__construct($id);
-            }
-
-            public function id(): NodeId
-            {
-                return $this->id;
-            }
-
+        return new class($name) extends Node {
             public function handlerClass(): string
             {
                 return stdClass::class;
@@ -48,9 +38,8 @@ class NodeHandlerContextTest extends TestCase
     public function constructorStoresAllFieldsCorrectly(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
-        $node = $this->makeNode($nodeId);
-        $pointer = Pointer::create($executionId, $nodeId);
+        $node = $this->makeNode('state-machine.test.node');
+        $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
         $bus = $this->createMock(TaskBusInterface::class);
 
@@ -66,25 +55,23 @@ class NodeHandlerContextTest extends TestCase
     public function constructorThrowsInvalidNodeExceptionWhenPointerNodeIdDiffersFromContextNodeId(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
-        $differentNodeId = NodeId::new();
-        $node = $this->makeNode($differentNodeId);
-        $pointer = Pointer::create($executionId, $nodeId);
+        $nodeA = $this->makeNode('state-machine.test.node-a');
+        $nodeB = $this->makeNode('state-machine.test.node-b');
+        $pointer = Pointer::create($executionId, $nodeA->id());
         $states = States::create($executionId, null, null, null);
         $bus = $this->createMock(TaskBusInterface::class);
 
         $this->expectException(InvalidNodeException::class);
 
-        new NodeHandlerContext($executionId, $node, $pointer, $states, $bus);
+        new NodeHandlerContext($executionId, $nodeB, $pointer, $states, $bus);
     }
 
     #[Test]
     public function dispatchTaskCallsBusWithTaskAndAutoInjectedTaskKeyStamp(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
-        $node = $this->makeNode($nodeId);
-        $pointer = Pointer::create($executionId, $nodeId);
+        $node = $this->makeNode('state-machine.test.node');
+        $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
         $task = new class implements Task {};
 
@@ -104,7 +91,7 @@ class NodeHandlerContextTest extends TestCase
 
         /** @var TaskKey $key */
         $key = reset($keys);
-        $this->assertTrue($nodeId->equals($key->nodeId));
+        $this->assertTrue($node->id()->equals($key->nodeId));
         $this->assertTrue($executionId->equals($key->executionId));
         $this->assertTrue($pointer->id->equals($key->pointerId));
     }
@@ -113,12 +100,11 @@ class NodeHandlerContextTest extends TestCase
     public function dispatchTaskDoesNotInjectTaskKeyStampWhenOneIsAlreadyProvided(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
-        $node = $this->makeNode($nodeId);
-        $pointer = Pointer::create($executionId, $nodeId);
+        $node = $this->makeNode('state-machine.test.node');
+        $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
         $task = new class implements Task {};
-        $providedKey = new TaskKey($nodeId, $executionId, $pointer->id, $task::class);
+        $providedKey = new TaskKey($node->id(), $executionId, $pointer->id, $task::class);
 
         $dispatchedStamps = [];
         $bus = $this->createMock(TaskBusInterface::class);
@@ -140,9 +126,8 @@ class NodeHandlerContextTest extends TestCase
     public function dispatchTaskThrowsInvalidTaskStampExceptionOnNonStamp(): void
     {
         $executionId = ExecutionId::new();
-        $nodeId = NodeId::new();
-        $node = $this->makeNode($nodeId);
-        $pointer = Pointer::create($executionId, $nodeId);
+        $node = $this->makeNode('state-machine.test.node');
+        $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
         $bus = $this->createMock(TaskBusInterface::class);
         $task = new class implements Task {};

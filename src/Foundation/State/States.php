@@ -24,7 +24,9 @@ use PhpArchitecture\Technical\Assert;
 
 class States extends AggregateRoot
 {
-    /** 
+    public const RESERVED_STATE_NAMES = [State::TECHNICAL];
+
+    /**
      * @param State[] $states
      */
     protected function __construct(
@@ -75,7 +77,7 @@ class States extends AggregateRoot
         }
 
         $this->states[$state->id->toString()] = $state;
-        $this->recordEvent(new StateDefinedEvent($state->id, $state->details));
+        $this->recordEvent(new StateDefinedEvent($state->id, $state->name, $state->details));
 
         return $state;
     }
@@ -92,11 +94,11 @@ class States extends AggregateRoot
     }
 
     /**
-     * @param StateDetail[] $detailsToAdd
+     * @param StateDetail[]|array<string,mixed> $detailsToSet
      * @param string[] $detailsToRemove
      * @throws StateModificationException
      */
-    public function modifyState(StateId $stateId, array $detailsToAdd, array $detailsToRemove): void
+    public function modifyState(StateId $stateId, array $detailsToSet, array $detailsToRemove): void
     {
         $state = $this->states[$stateId->toString()] ?? null;
         if ($state === null) {
@@ -104,22 +106,23 @@ class States extends AggregateRoot
         }
 
         Assert::eachString($detailsToRemove, CannotModifyStateException::class);
-        Assert::eachInstanceOf($detailsToAdd, StateDetail::class, CannotModifyStateException::class);
 
         $details = $state->details;
         $addedDetails = [];
         $removedDetails = [];
         foreach ($detailsToRemove as $detailToRemove) {
             $detail = $details[$detailToRemove] ?? null;
-            if (null === $detail) {
-                throw new CannotModifyStateException("Detail to remove does not exist in State named `{$state->name}` with id: `{$stateId->toString()}`.");
+            if ($detail !== null) {
+                $removedDetails[$detailToRemove] = $detail;
             }
-
-            $removedDetails[$detailToRemove] = $detail;
             unset($details[$detailToRemove]);
         }
 
-        foreach ($detailsToAdd as $detailToAdd) {
+        foreach ($detailsToSet as $key => $detailToAdd) {
+            if (!$detailToAdd instanceof StateDetail) {
+                $detailToAdd = new StateDetail($key, $detailToAdd);
+            }
+
             $existingDetail = $details[$detailToAdd->name] ?? null;
             if (null !== $existingDetail) {
                 $removedDetails[$detailToAdd->name] = $existingDetail;

@@ -39,9 +39,9 @@ class AwaitStateComponentTest extends TestCase
      */
     private function extractTransitions(AwaitStateComponent $component): array
     {
-        $component->input->trigger->attach(NodeId::new());
-        $component->output->done->attach(NodeId::new());
-        $component->output->expired->attach(NodeId::new());
+        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node1"));
+        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node2"));
+        $component->output->expired->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node3"));
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
         $list = array_values($transitions);
@@ -95,9 +95,9 @@ class AwaitStateComponentTest extends TestCase
     public function threeTransitionsAreDefinedInComponent(): void
     {
         $component = AwaitStateComponent::create('my_state');
-        $component->input->trigger->attach(NodeId::new());
-        $component->output->done->attach(NodeId::new());
-        $component->output->expired->attach(NodeId::new());
+        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node4"));
+        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node5"));
+        $component->output->expired->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node6"));
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
 

@@ -17,7 +17,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function createGeneratesNonNullId(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node1"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node2"));
 
         $this->assertInstanceOf(TransitionId::class, $transition->id);
     }
@@ -25,8 +25,8 @@ class TransitionTest extends TestCase
     #[Test]
     public function createReturnsDifferentIdOnEachCall(): void
     {
-        $from = NodeId::new();
-        $to = NodeId::new();
+        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node3");
+        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node4");
 
         $a = Transition::create($from, $to);
         $b = Transition::create($from, $to);
@@ -37,8 +37,8 @@ class TransitionTest extends TestCase
     #[Test]
     public function createStoresFromAndToNodes(): void
     {
-        $from = NodeId::new();
-        $to = NodeId::new();
+        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node5");
+        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node6");
 
         $transition = Transition::create($from, $to);
 
@@ -49,7 +49,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function createStoresNullConditionByDefault(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node7"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node8"));
 
         $this->assertNull($transition->condition);
     }
@@ -57,7 +57,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function createStoresEmptyTagsByDefault(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node9"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node10"));
 
         $this->assertSame([], $transition->tags);
     }
@@ -65,7 +65,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function createStoresTags(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new(), null, ['priority', 'fast']);
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node11"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node12"), null, ['priority', 'fast']);
 
         $this->assertSame(['priority', 'fast'], $transition->tags);
     }
@@ -75,15 +75,15 @@ class TransitionTest extends TestCase
     {
         $this->expectException(InvalidTransitionException::class);
 
-        Transition::create(NodeId::new(), NodeId::new(), null, [42]);
+        Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node13"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node14"), null, [42]);
     }
 
     #[Test]
     public function uReturnsFromNode(): void
     {
-        $from = NodeId::new();
+        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node15");
 
-        $transition = Transition::create($from, NodeId::new());
+        $transition = Transition::create($from, NodeId::create("state-machine.unit.foundation.transition.transitiontest.node16"));
 
         $this->assertTrue($from->equals($transition->u()));
     }
@@ -91,9 +91,9 @@ class TransitionTest extends TestCase
     #[Test]
     public function vReturnsToNode(): void
     {
-        $to = NodeId::new();
+        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node17");
 
-        $transition = Transition::create(NodeId::new(), $to);
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node18"), $to);
 
         $this->assertTrue($to->equals($transition->v()));
     }
@@ -101,7 +101,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function tagsReturnsProvidedTags(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new(), null, ['tag1']);
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node19"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node20"), null, ['tag1']);
 
         $this->assertSame(['tag1'], $transition->tags());
     }
@@ -109,7 +109,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function typeReturnsDirectedEdgeType(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node21"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node22"));
 
         $this->assertSame(EdgeType::Directed, $transition->type());
     }
@@ -117,7 +117,7 @@ class TransitionTest extends TestCase
     #[Test]
     public function idMethodReturnsTransitionId(): void
     {
-        $transition = Transition::create(NodeId::new(), NodeId::new());
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node23"), NodeId::create("state-machine.unit.foundation.transition.transitiontest.node24"));
 
         $this->assertSame($transition->id, $transition->id());
     }
@@ -126,8 +126,8 @@ class TransitionTest extends TestCase
     public function recreateUsesProvidedId(): void
     {
         $id = TransitionId::new();
-        $from = NodeId::new();
-        $to = NodeId::new();
+        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node25");
+        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node26");
 
         $transition = Transition::recreate($id, $from, $to, null, []);
 
@@ -137,8 +137,8 @@ class TransitionTest extends TestCase
     #[Test]
     public function recreatePreservesFromToAndTags(): void
     {
-        $from = NodeId::new();
-        $to = NodeId::new();
+        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node27");
+        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node28");
 
         $transition = Transition::recreate(TransitionId::new(), $from, $to, null, ['tag']);
 

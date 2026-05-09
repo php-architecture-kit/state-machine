@@ -12,17 +12,6 @@ final class Port extends Node
 {
     public protected(set) ?NodeId $attachedNode = null;
 
-    public function __construct(
-        public readonly string $name,
-    ) {
-        parent::__construct(NodeId::new(), ['port']);
-    }
-
-    public function id(): NodeId
-    {
-        return $this->id;
-    }
-
     public function handlerClass(): string
     {
         throw new LogicException('Port is a definition boundary node and cannot be handled as a state-machine node.');

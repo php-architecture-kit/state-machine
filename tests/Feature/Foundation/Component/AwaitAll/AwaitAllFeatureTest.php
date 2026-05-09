@@ -43,10 +43,10 @@ class AwaitAllFeatureTest extends TestCase
     #[Test]
     public function joinCompletesAfterAllBranchesArrive(): void
     {
-        $startId = NodeId::new();
-        $midAId  = NodeId::new();
-        $midBId  = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node1");
+        $midAId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node2");
+        $midBId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node3");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node4");
 
         $fork = ParallelComponent::create(['a', 'b']);
         $fork->input->trigger->attach($startId);
@@ -76,10 +76,10 @@ class AwaitAllFeatureTest extends TestCase
     #[Test]
     public function joinSuspendsWhenOnlyOneBranchArrives(): void
     {
-        $startId = NodeId::new();
-        $midAId  = NodeId::new();
-        $midBId  = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node5");
+        $midAId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node6");
+        $midBId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node7");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node8");
 
         $join = AwaitAllComponent::create(['a', 'b']);
         $join->input->a->attach($midAId);
@@ -104,11 +104,11 @@ class AwaitAllFeatureTest extends TestCase
     #[Test]
     public function joinWithThreeBranchesCompletesOnlyAfterAllThreeArrive(): void
     {
-        $startId = NodeId::new();
-        $midAId  = NodeId::new();
-        $midBId  = NodeId::new();
-        $midCId  = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node9");
+        $midAId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node10");
+        $midBId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node11");
+        $midCId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node12");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node13");
 
         $fork = ParallelComponent::create(['a', 'b', 'c']);
         $fork->input->trigger->attach($startId);
@@ -140,10 +140,10 @@ class AwaitAllFeatureTest extends TestCase
     #[Test]
     public function joinRecordsAllArrivedBranchesInStates(): void
     {
-        $startId = NodeId::new();
-        $midAId  = NodeId::new();
-        $midBId  = NodeId::new();
-        $endId   = NodeId::new();
+        $startId = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node14");
+        $midAId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node15");
+        $midBId  = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node16");
+        $endId   = NodeId::create("state-machine.feature.foundation.component.awaitall.awaitallfeat.node17");
 
         $fork = ParallelComponent::create(['a', 'b']);
         $fork->input->trigger->attach($startId);

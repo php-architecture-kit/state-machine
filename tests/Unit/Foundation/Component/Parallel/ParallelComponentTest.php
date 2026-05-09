@@ -28,9 +28,9 @@ class ParallelComponentTest extends TestCase
      */
     private function extractTransitions(ParallelComponent $component, array $outputNames): array
     {
-        $component->input->trigger->attach(NodeId::new());
+        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.parallel.parallelcompone.node1"));
         foreach ($outputNames as $name) {
-            $component->output->{$name}->attach(NodeId::new());
+            $component->output->{$name}->attach(NodeId::create("state-machine.unit.foundation.component.parallel.parallelcompone.node2"));
         }
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();

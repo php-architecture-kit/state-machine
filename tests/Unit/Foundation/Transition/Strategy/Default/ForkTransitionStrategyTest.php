@@ -21,7 +21,7 @@ class ForkTransitionStrategyTest extends TestCase
 
     private function makeTransition(?NodeId $to = null): Transition
     {
-        return Transition::create(NodeId::new(), $to ?? NodeId::new());
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node1"), $to ?? NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node2"));
     }
 
     #[Test]
@@ -78,9 +78,9 @@ class ForkTransitionStrategyTest extends TestCase
     {
         $strategy = new ForkTransitionStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
-        $target1 = NodeId::new();
-        $target2 = NodeId::new();
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node3"));
+        $target1 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node4");
+        $target2 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node5");
         $output = $this->makeOutput([
             $this->makeTransition($target1),
             $this->makeTransition($target2),
@@ -97,9 +97,9 @@ class ForkTransitionStrategyTest extends TestCase
     {
         $strategy = new ForkTransitionStrategy();
         $execution = Execution::create();
-        $pointer = $execution->pointers->startAt(NodeId::new());
-        $target1 = NodeId::new();
-        $target2 = NodeId::new();
+        $pointer = $execution->pointers->startAt(NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node6"));
+        $target1 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node7");
+        $target2 = NodeId::create("state-machine.unit.foundation.transition.strategy.default.forktr.node8");
         $output = $this->makeOutput([
             $this->makeTransition($target1),
             $this->makeTransition($target2),
