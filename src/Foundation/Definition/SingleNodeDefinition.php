@@ -15,6 +15,7 @@ class SingleNodeDefinition extends Definition
     public static function create(NodeInterface $node, array $inputs, array $outputs): static
     {
         $instance = static::newInstance(
+            $node->name(),
             inputs: $inputs,
             outputs: $outputs,
         );

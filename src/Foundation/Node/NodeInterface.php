@@ -15,6 +15,8 @@ interface NodeInterface extends VertexInterface
     /** @return class-string */
     public function handlerClass(): string;
 
+    public function name(): string;
+
     /** @return string[] */
     public function tags(): array;
 
