@@ -7,26 +7,23 @@ namespace PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerResult;
-use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 
 class AwaitAllArrivalNodeHandler implements NodeHandlerInterface
 {
     public function handle(NodeHandlerContext $context): NodeHandlerResult
     {
-        /** @var AwaitAllArrivalNode $node */
         $node = $context->node;
+        assert($node instanceof AwaitAllArrivalNode);
 
-        $stateKey = 'join-arrived-' . $node->componentId;
-        $state = $context->states->getState($stateKey);
+        $stateName = 'join-arrived-' . $node->componentId;
+        $state = $context->states->getState($stateName);
 
         if ($state === null) {
-            $context->states->defineState($stateKey, [
-                new StateDetail($node->branchName, true),
-            ]);
-        } else {
-            $context->states->modifyState($state->id, [
-                new StateDetail($node->branchName, true),
-            ], []);
+            $state = $context->states->defineState($stateName, []);
+        }
+
+        if ($state[$node->branchName] === null) {
+            $context->states->modifyState($state->id, [$node->branchName => true]);
         }
 
         return NodeHandlerResult::Continue;

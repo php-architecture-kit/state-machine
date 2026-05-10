@@ -24,7 +24,7 @@ final class SingleTransitionStrategy implements TransitionStrategy
     ): void {
         $execution->pointers->transition(
             $pointer->id,
-            array_values($transitionSelection->goto)[0]->to,
+            array_values($transitionSelection->goto)[0]->output,
         );
     }
 }

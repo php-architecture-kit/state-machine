@@ -25,25 +25,25 @@ class TransitionTest extends TestCase
     #[Test]
     public function createReturnsDifferentIdOnEachCall(): void
     {
-        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node3");
-        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node4");
+        $input = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node3");
+        $output = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node4");
 
-        $a = Transition::create($from, $to);
-        $b = Transition::create($from, $to);
+        $a = Transition::create($input, $output);
+        $b = Transition::create($input, $output);
 
         $this->assertFalse($a->id->equals($b->id));
     }
 
     #[Test]
-    public function createStoresFromAndToNodes(): void
+    public function createStoresInputAndOutputNodes(): void
     {
-        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node5");
-        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node6");
+        $input = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node5");
+        $output = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node6");
 
-        $transition = Transition::create($from, $to);
+        $transition = Transition::create($input, $output);
 
-        $this->assertTrue($from->equals($transition->from));
-        $this->assertTrue($to->equals($transition->to));
+        $this->assertTrue($input->equals($transition->input));
+        $this->assertTrue($output->equals($transition->output));
     }
 
     #[Test]
@@ -79,23 +79,23 @@ class TransitionTest extends TestCase
     }
 
     #[Test]
-    public function uReturnsFromNode(): void
+    public function uReturnsInputNode(): void
     {
-        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node15");
+        $input = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node15");
 
-        $transition = Transition::create($from, NodeId::create("state-machine.unit.foundation.transition.transitiontest.node16"));
+        $transition = Transition::create($input, NodeId::create("state-machine.unit.foundation.transition.transitiontest.node16"));
 
-        $this->assertTrue($from->equals($transition->u()));
+        $this->assertTrue($input->equals($transition->u()));
     }
 
     #[Test]
-    public function vReturnsToNode(): void
+    public function vReturnsOutputNode(): void
     {
-        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node17");
+        $output = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node17");
 
-        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node18"), $to);
+        $transition = Transition::create(NodeId::create("state-machine.unit.foundation.transition.transitiontest.node18"), $output);
 
-        $this->assertTrue($to->equals($transition->v()));
+        $this->assertTrue($output->equals($transition->v()));
     }
 
     #[Test]
@@ -126,24 +126,24 @@ class TransitionTest extends TestCase
     public function recreateUsesProvidedId(): void
     {
         $id = TransitionId::new();
-        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node25");
-        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node26");
+        $input = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node25");
+        $output = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node26");
 
-        $transition = Transition::recreate($id, $from, $to, null, []);
+        $transition = Transition::recreate($id, $input, $output, null, []);
 
         $this->assertTrue($id->equals($transition->id));
     }
 
     #[Test]
-    public function recreatePreservesFromToAndTags(): void
+    public function recreatePreservesInputOutputAndTags(): void
     {
-        $from = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node27");
-        $to = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node28");
+        $input = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node27");
+        $output = NodeId::create("state-machine.unit.foundation.transition.transitiontest.node28");
 
-        $transition = Transition::recreate(TransitionId::new(), $from, $to, null, ['tag']);
+        $transition = Transition::recreate(TransitionId::new(), $input, $output, null, ['tag']);
 
-        $this->assertTrue($from->equals($transition->from));
-        $this->assertTrue($to->equals($transition->to));
+        $this->assertTrue($input->equals($transition->input));
+        $this->assertTrue($output->equals($transition->output));
         $this->assertSame(['tag'], $transition->tags);
     }
 }

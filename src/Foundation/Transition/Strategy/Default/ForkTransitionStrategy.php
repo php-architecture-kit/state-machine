@@ -26,7 +26,7 @@ final class ForkTransitionStrategy implements TransitionStrategy
     ): void {
         $execution->pointers->transition(
             $pointer->id,
-            ...array_map(static fn(Transition $t): NodeId => $t->to, $transitionSelection->goto),
+            ...array_map(static fn(Transition $t): NodeId => $t->output, $transitionSelection->goto),
         );
     }
 }

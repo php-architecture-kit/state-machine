@@ -48,7 +48,7 @@ abstract class StateMachine
             $this->addNode($node);
         }
         foreach ($transitions as $transition) {
-            $this->addTransition($transition->from, $transition->to, $transition->condition); // @phpstan-ignore-line
+            $this->addTransition($transition->input, $transition->output, $transition->condition); // @phpstan-ignore-line
         }
 
         return $this;
@@ -61,9 +61,9 @@ abstract class StateMachine
         return $this;
     }
 
-    public function addTransition(NodeId $from, NodeId $to, ?TransitionCondition $condition = null): static
+    public function addTransition(NodeId $input, NodeId $output, ?TransitionCondition $condition = null): static
     {
-        $this->graph->edgeStore->addEdge(Transition::create($from, $to, $condition));
+        $this->graph->edgeStore->addEdge(Transition::create($input, $output, $condition));
 
         return $this;
     }

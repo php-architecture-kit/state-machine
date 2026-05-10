@@ -13,14 +13,11 @@ class AsyncNodeHandler implements NodeHandlerInterface
 {
     public function handle(NodeHandlerContext $context): NodeHandlerResult
     {
-        /** @var AsyncNode $node */
         $node = $context->node;
+        assert($node instanceof AsyncNode);
 
         $task = ($node->taskFactory)($context->states);
-
-        $context->dispatchTask($task, [
-            new AwaitStateStamp($node->stateName),
-        ]);
+        $context->dispatchTask($task, [new AwaitStateStamp($node->stateName)]);
 
         return NodeHandlerResult::Continue;
     }

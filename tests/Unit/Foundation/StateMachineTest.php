@@ -119,7 +119,7 @@ class StateMachineTest extends TestCase
 
         $edges = $machine->getOutgoingTransitionsPublic($nodeA->id());
         $this->assertCount(1, $edges);
-        $this->assertTrue($nodeB->id()->equals($edges[0]->to));
+        $this->assertTrue($nodeB->id()->equals($edges[0]->output));
     }
 
     #[Test]

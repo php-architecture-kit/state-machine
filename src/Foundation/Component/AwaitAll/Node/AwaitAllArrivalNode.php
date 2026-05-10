@@ -8,17 +8,12 @@ use PhpArchitecture\StateMachine\Foundation\Node\Node;
 
 class AwaitAllArrivalNode extends Node
 {
-    /**
-     * @param string $globallyUniqueName Unique name across all state machines
-     * @param string[] $tags
-     */
     public function __construct(
-        string $globallyUniqueName,
-        public readonly string $componentId,
+        string $uniqueName,
         public readonly string $branchName,
-        array $tags = [],
+        public readonly string $componentId,
     ) {
-        parent::__construct($globallyUniqueName, $tags);
+        parent::__construct($uniqueName);
     }
 
     public function handlerClass(): string
