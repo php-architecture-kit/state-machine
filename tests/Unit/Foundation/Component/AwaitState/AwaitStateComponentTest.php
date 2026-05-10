@@ -7,8 +7,10 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\AwaitStat
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
-use PhpArchitecture\StateMachine\Foundation\Component\AwaitState\AwaitStateComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\AwaitState\Node\AwaitStateNode;
+use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
+use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
+use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -37,10 +39,10 @@ class AwaitStateComponentTest extends TestCase
     /**
      * @return array{TransitionInterface, TransitionInterface, TransitionInterface}
      */
-    private function extractTransitions(AwaitStateComponent $component): array
+    private function extractTransitions(Definition $component): array
     {
-        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node1"));
-        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node2"));
+        $component->input->at->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node1"));
+        $component->output->run->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node2"));
         $component->output->expired->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node3"));
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
@@ -52,51 +54,51 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function createReturnsSelfInstance(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
 
-        $this->assertInstanceOf(AwaitStateComponent::class, $component);
+        $this->assertInstanceOf(Definition::class, $component);
     }
 
     #[Test]
     public function componentHasTriggerInputPort(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
 
-        $this->assertInstanceOf(Port::class, $component->input->trigger);
+        $this->assertInstanceOf(Port::class, $component->input->at);
     }
 
     #[Test]
     public function componentHasDoneAndExpiredOutputPorts(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
 
-        $this->assertInstanceOf(Port::class, $component->output->done);
+        $this->assertInstanceOf(Port::class, $component->output->run);
         $this->assertInstanceOf(Port::class, $component->output->expired);
     }
 
     #[Test]
     public function definedNodesContainAwaitStateNode(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
-        $hasAwaitNode = false;
+        $hasPassthroughNode = false;
         foreach ($nodes as $node) {
-            if ($node instanceof AwaitStateNode) {
-                $hasAwaitNode = true;
+            if ($node instanceof PassthroughNode) {
+                $hasPassthroughNode = true;
                 break;
             }
         }
 
-        $this->assertTrue($hasAwaitNode, 'AwaitStateNode must be present in defined nodes.');
+        $this->assertTrue($hasPassthroughNode, 'PassthroughNode must be present in defined nodes.');
     }
 
     #[Test]
     public function threeTransitionsAreDefinedInComponent(): void
     {
-        $component = AwaitStateComponent::create('my_state');
-        $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node4"));
-        $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node5"));
+        $component = AwaitStateComponent::create('my_state', 'my_state');
+        $component->input->at->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node4"));
+        $component->output->run->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node5"));
         $component->output->expired->attach(NodeId::create("state-machine.unit.foundation.component.awaitstate.awaitstatecom.node6"));
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
@@ -107,7 +109,7 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function doneTransitionReturnsWaitWhenStateAbsent(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
         [, $doneTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
@@ -119,7 +121,7 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function doneTransitionReturnsAcceptedWhenStatePresent(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
         [, $doneTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
         $states->defineState('my_state', []);
@@ -132,7 +134,7 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function doneTransitionReturnsWaitWhenStateExistsButRequiredDetailMissing(): void
     {
-        $component = AwaitStateComponent::create('my_state', 'answer');
+        $component = AwaitStateComponent::create('my_state', 'my_state', 'answer');
         [, $doneTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
         $states->defineState('my_state', []);
@@ -145,7 +147,7 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function doneTransitionReturnsAcceptedWhenStateAndRequiredDetailPresent(): void
     {
-        $component = AwaitStateComponent::create('my_state', 'answer');
+        $component = AwaitStateComponent::create('my_state', 'my_state', 'answer');
         [, $doneTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
         $states->defineState('my_state', [new StateDetail('answer', 'yes')]);
@@ -160,7 +162,7 @@ class AwaitStateComponentTest extends TestCase
     {
         $now = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $clock = $this->makeClockAt($now);
-        $component = AwaitStateComponent::create('my_state', null, 60, $clock);
+        $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
@@ -178,7 +180,7 @@ class AwaitStateComponentTest extends TestCase
         $clock = $this->createMock(ClockInterface::class);
         $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
 
-        $component = AwaitStateComponent::create('my_state', null, 60, $clock);
+        $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
@@ -197,7 +199,7 @@ class AwaitStateComponentTest extends TestCase
         $clock = $this->createMock(ClockInterface::class);
         $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
 
-        $component = AwaitStateComponent::create('my_state', null, 60, $clock);
+        $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [, $doneTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
         $states->defineState('my_state', []);
@@ -211,7 +213,7 @@ class AwaitStateComponentTest extends TestCase
     #[Test]
     public function expiredTransitionReturnsRejectedWhenNoTimeoutConfigured(): void
     {
-        $component = AwaitStateComponent::create('my_state');
+        $component = AwaitStateComponent::create('my_state', 'my_state');
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
@@ -225,7 +227,7 @@ class AwaitStateComponentTest extends TestCase
     {
         $now = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $clock = $this->makeClockAt($now);
-        $component = AwaitStateComponent::create('my_state', null, 60, $clock);
+        $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
@@ -234,7 +236,7 @@ class AwaitStateComponentTest extends TestCase
 
         $stateCount = count(array_filter(
             $states->states,
-            static fn($s) => str_starts_with($s->name, 'awaitstate-'),
+            static fn($s) => $s->name === State::TECHNICAL,
         ));
         $this->assertSame(1, $stateCount);
     }

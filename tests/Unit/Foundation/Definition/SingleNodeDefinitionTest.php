@@ -16,7 +16,7 @@ class SingleNodeDefinitionTest extends TestCase
     public function createProducesDefinitionWithCorrectPortCount(): void
     {
         $node = new ConcreteDefinitionNode('test.single-node.node');
-        $definition = SingleNodeDefinition::create($node, ['in1', 'in2'], ['out1']);
+        $definition = SingleNodeDefinition::create($node, ['in1' => null, 'in2' => null], ['out1' => null]);
 
         $this->assertCount(2, (array) $definition->input);
         $this->assertCount(1, (array) $definition->output);
@@ -26,7 +26,7 @@ class SingleNodeDefinitionTest extends TestCase
     public function createUsesNodeNameAsDefinitionName(): void
     {
         $node = new ConcreteDefinitionNode('test.single-node.named');
-        $definition = SingleNodeDefinition::create($node, ['in1'], ['out1']);
+        $definition = SingleNodeDefinition::create($node, ['in1' => null], ['out1' => null]);
 
         [$nodes] = $definition->getDefinedNodesAndTransitions();
 
@@ -38,7 +38,7 @@ class SingleNodeDefinitionTest extends TestCase
     public function createAddsTransitionsFromInputPortsToNode(): void
     {
         $node = new ConcreteDefinitionNode('test.single-node.transitions');
-        $definition = SingleNodeDefinition::create($node, ['in1', 'in2'], ['out1']);
+        $definition = SingleNodeDefinition::create($node, ['in1' => null, 'in2' => null], ['out1' => null]);
 
         $definition->input->in1->attach($node->id());
         $definition->input->in2->attach($node->id());
@@ -53,7 +53,7 @@ class SingleNodeDefinitionTest extends TestCase
     public function inputPortsArePortInstances(): void
     {
         $node = new ConcreteDefinitionNode('test.single-node.ports');
-        $definition = SingleNodeDefinition::create($node, ['in1'], ['out1']);
+        $definition = SingleNodeDefinition::create($node, ['in1' => null], ['out1' => null]);
 
         foreach ((array) $definition->input as $port) {
             $this->assertInstanceOf(Port::class, $port);
