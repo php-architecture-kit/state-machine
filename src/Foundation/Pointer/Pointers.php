@@ -110,22 +110,22 @@ class Pointers extends AggregateRoot
         return $forkedPointer;
     }
 
-    public function transition(PointerId $pointerId, NodeId ...$to): void
+    public function transition(PointerId $pointerId, NodeId ...$output): void
     {
         $pointer = $this->pointers[$pointerId->toString()] ?? null;
         if (null === $pointer) {
             throw new CannotTransitionPointerException("Requested Pointer to perform transition does not exists in pointers collection.");
         }
 
-        if (count($to) === 0) {
+        if (count($output) === 0) {
             throw new CannotTransitionPointerException("At least one target node must be provided for transition.");
         }
 
-        $this->transitionPolicy?->assertPointerTransitionAllowed($pointer, $this, ...$to);
+        $this->transitionPolicy?->assertPointerTransitionAllowed($pointer, $this, ...$output);
         $lastNodeId = $pointer->nodeId;
 
-        if (count($to) === 1) {
-            $nodeId = $to[0];
+        if (count($output) === 1) {
+            $nodeId = $output[0];
 
             $pointer->step($nodeId);
             $this->recordEvent(new PointerTransitionedEvent($pointerId, $lastNodeId, $nodeId, $pointer->currentStep));
@@ -133,7 +133,7 @@ class Pointers extends AggregateRoot
             return;
         }
 
-        foreach ($to as $nodeId) {
+        foreach ($output as $nodeId) {
             $forkedPointer = $pointer->fork();
             $this->pointers[$forkedPointer->id->toString()] = $forkedPointer;
             $this->recordEvent(new PointerForkedEvent($pointerId, $forkedPointer->id, $nodeId));

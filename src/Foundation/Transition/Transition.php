@@ -19,8 +19,8 @@ class Transition implements TransitionInterface
      */
     protected function __construct(
         public readonly TransitionId $id,
-        public readonly NodeId $from,
-        public readonly NodeId $to,
+        public readonly NodeId $input,
+        public readonly NodeId $output,
         public readonly ?TransitionCondition $condition,
         public readonly array $tags,
     ) {
@@ -31,16 +31,16 @@ class Transition implements TransitionInterface
      * @param string[] $tags
      */
     public static function create(
-        NodeId $from,
-        NodeId $to,
+        NodeId $input,
+        NodeId $output,
         ?TransitionCondition $condition = null,
         array $tags = [],
     ): static {
         /** @phpstan-ignore-next-line */
         return new static(
             TransitionId::new(),
-            $from,
-            $to,
+            $input,
+            $output,
             $condition,
             $tags,
         );
@@ -51,16 +51,16 @@ class Transition implements TransitionInterface
      */
     public static function recreate(
         TransitionId $id,
-        NodeId $from,
-        NodeId $to,
+        NodeId $input,
+        NodeId $output,
         ?TransitionCondition $condition,
         array $tags,
     ): static {
         /** @phpstan-ignore-next-line */
         return new static(
             $id,
-            $from,
-            $to,
+            $input,
+            $output,
             $condition,
             $tags,
         );
@@ -73,12 +73,12 @@ class Transition implements TransitionInterface
 
     public function u(): NodeId
     {
-        return $this->from;
+        return $this->input;
     }
 
     public function v(): NodeId
     {
-        return $this->to;
+        return $this->output;
     }
 
     /** @return string[] */
@@ -97,22 +97,22 @@ class Transition implements TransitionInterface
         return $this->condition;
     }
 
-    public function withFrom(NodeId $nodeId): self
+    public function withInput(NodeId $nodeId): self
     {
         return new self(
             $this->id,
             $nodeId,
-            $this->to,
+            $this->output,
             $this->condition,
             $this->tags,
         );
     }
 
-    public function withTo(NodeId $nodeId): self
+    public function withOutput(NodeId $nodeId): self
     {
         return new self(
             $this->id,
-            $this->from,
+            $this->input,
             $nodeId,
             $this->condition,
             $this->tags,

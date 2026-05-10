@@ -217,7 +217,7 @@ class PointersTest extends TestCase
         $policyCalled = false;
         $policy = new class($policyCalled) implements \PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerTransitionPolicy {
             public function __construct(private bool &$called) {}
-            public function assertPointerTransitionAllowed(Pointer $pointer, Pointers $pointers, NodeId ...$to): void
+            public function assertPointerTransitionAllowed(Pointer $pointer, Pointers $pointers, NodeId ...$output): void
             {
                 $this->called = true;
             }

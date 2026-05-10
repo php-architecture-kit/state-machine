@@ -25,8 +25,8 @@ class SubGraphDefinitionTest extends TestCase
         foreach ($nodes as $node) {
             $graph->vertexStore->addVertex($node);
         }
-        foreach ($edges as [$from, $to]) {
-            $graph->edgeStore->addEdge(Transition::create($from->id, $to->id));
+        foreach ($edges as [$input, $output]) {
+            $graph->edgeStore->addEdge(Transition::create($input->id, $output->id));
         }
 
         return $graph;

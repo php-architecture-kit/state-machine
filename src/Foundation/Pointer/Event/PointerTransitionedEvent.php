@@ -12,8 +12,8 @@ final readonly class PointerTransitionedEvent implements DomainEvent
 {
     public function __construct(
         public PointerId $pointerId,
-        public NodeId $from,
-        public NodeId $to,
+        public NodeId $input,
+        public NodeId $output,
         public int $step,
     ) {}
 }

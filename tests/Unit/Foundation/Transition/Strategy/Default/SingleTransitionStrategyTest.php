@@ -19,9 +19,9 @@ class SingleTransitionStrategyTest extends TestCase
         return new TransitionSelectionOutput($goto, $waitfor, $reject);
     }
 
-    private function makeTransition(?NodeId $to = null): Transition
+    private function makeTransition(?NodeId $output = null): Transition
     {
-        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node1"), $to ?? NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node2"));
+        return Transition::create(NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node1"), $output ?? NodeId::create("state-machine.unit.foundation.transition.strategy.default.single.node2"));
     }
 
     #[Test]

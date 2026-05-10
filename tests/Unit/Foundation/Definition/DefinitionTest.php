@@ -437,14 +437,14 @@ class ConcreteDefinition extends Definition
         return $this->addNode($node);
     }
 
-    public function addTransitionPublic(NodeId $from, NodeId $to): static
+    public function addTransitionPublic(NodeId $input, NodeId $output): static
     {
-        return $this->addTransition($from, $to);
+        return $this->addTransition($input, $output);
     }
 
-    public function addTransitionWithNodePublic(NodeId|NodeInterface $from, NodeId|NodeInterface $to): static
+    public function addTransitionWithNodePublic(NodeId|NodeInterface $input, NodeId|NodeInterface $output): static
     {
-        return $this->addTransition($from, $to);
+        return $this->addTransition($input, $output);
     }
 }
 

@@ -65,9 +65,9 @@ abstract class Definition extends Graph
     /**
      * @param null|TransitionCondition|callable(States):TransitionConditionDecision $condition
      */
-    protected function addTransition(NodeId|NodeInterface $from, NodeId|NodeInterface $to, null|callable|TransitionCondition $condition = null): static
+    protected function addTransition(NodeId|NodeInterface $input, NodeId|NodeInterface $output, null|callable|TransitionCondition $condition = null): static
     {
-        foreach (['from', 'to'] as $node) {
+        foreach (['input', 'output'] as $node) {
             if (${$node} instanceof NodeInterface) {
                 if (!$this->vertexStore->hasVertex(${$node}->id())) { // @phpstan-ignore-line
                     $this->addNode(${$node}); // @phpstan-ignore-line
@@ -81,7 +81,7 @@ abstract class Definition extends Graph
             $condition = TransitionConditionCallback::define($condition);
         }
 
-        $this->edgeStore->addEdge(Transition::create($from, $to, $condition)); // @phpstan-ignore-line
+        $this->edgeStore->addEdge(Transition::create($input, $output, $condition)); // @phpstan-ignore-line
 
         return $this;
     }
@@ -157,9 +157,9 @@ abstract class Definition extends Graph
                 foreach ($incidenceIndex->edgesFor($port->id) as $transition) {
                     /** @var TransitionInterface $transition */
                     if ($transition->u()->equals($port->id())) {
-                        $updated = $transition->withFrom($nodeId);
+                        $updated = $transition->withInput($nodeId);
                     } elseif ($transition->v()->equals($port->id())) {
-                        $updated = $transition->withTo($nodeId);
+                        $updated = $transition->withOutput($nodeId);
                     } else {
                         continue;
                     }
@@ -230,7 +230,7 @@ abstract class Definition extends Graph
             $wrapperPort = $wrapper->input->{$portName};
 
             $updatedTransitions = array_map(
-                static fn(TransitionInterface $transition): TransitionInterface => $transition->withFrom($wrapperPort->id),
+                static fn(TransitionInterface $transition): TransitionInterface => $transition->withInput($wrapperPort->id),
                 $wrapperIncidenceIndex->edgesFor($connectedPort->id),
             );
 
@@ -245,7 +245,7 @@ abstract class Definition extends Graph
             $wrapperPort = $wrapper->output->{$portName};
 
             $updatedTransitions = array_map(
-                static fn(TransitionInterface $transition): TransitionInterface => $transition->withTo($wrapperPort->id),
+                static fn(TransitionInterface $transition): TransitionInterface => $transition->withOutput($wrapperPort->id),
                 $wrapperIncidenceIndex->edgesFor($connectedPort->id),
             );
 
@@ -302,9 +302,9 @@ abstract class Definition extends Graph
             foreach ($nodeTransitions as $transitionId) {
                 $transition = $transitions[$transitionId];
                 if ($transition->u()->equals($node->id())) {
-                    $transitions[$transitionId] = $transition->withFrom($nodeId);
+                    $transitions[$transitionId] = $transition->withInput($nodeId);
                 } elseif ($transition->v()->equals($node->id())) {
-                    $transitions[$transitionId] = $transition->withTo($nodeId);
+                    $transitions[$transitionId] = $transition->withOutput($nodeId);
                 } else {
                     throw new LogicException('Port node must be either source or target of transition');
                 }

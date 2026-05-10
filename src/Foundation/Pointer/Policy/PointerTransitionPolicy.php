@@ -14,5 +14,5 @@ interface PointerTransitionPolicy
     /**
      * @throws PointerTransitionException
      */
-    public function assertPointerTransitionAllowed(Pointer $pointer, Pointers $pointers, NodeId ...$to): void;
+    public function assertPointerTransitionAllowed(Pointer $pointer, Pointers $pointers, NodeId ...$output): void;
 }
