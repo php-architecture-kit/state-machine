@@ -32,6 +32,10 @@
         "php-architecture-kit/uuid": "^1.1",
         "php-architecture-kit/technical": "^1.0"
     },
+    "require-dev": {
+        "jawira/plantuml-encoding": "^1.1",
+        "symfony/yaml": "^8.0"
+    },
     "autoload": {
         "psr-4": {
             "PhpArchitecture\\StateMachine\\": "src/"

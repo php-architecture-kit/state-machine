@@ -9,6 +9,11 @@ use PhpArchitecture\StateMachine\Foundation\Node\Node;
 
 class AwaitStateNode extends Node
 {
+    public function __construct()
+    {
+        parent::__construct('php-architecture.await-state.' . uniqid('', true));
+    }
+
     public function id(): NodeId
     {
         return $this->id;

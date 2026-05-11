@@ -10,6 +10,11 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionSelect
 
 class AwaitAllSyncNode extends Node
 {
+    public function __construct()
+    {
+        parent::__construct('php-architecture.await-all-sync.' . uniqid('', true));
+    }
+
     public function handlerClass(): string
     {
         return AwaitAllSyncNodeHandler::class;

@@ -65,8 +65,12 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function componentSuspendsAfterDispatchUntilStateArrives(): void
     {
-        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node1");
-        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node2");
+        $names = [
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node1',
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node2',
+        ];
+        $startId = NodeId::create($names[0]);
+        $endId   = NodeId::create($names[1]);
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -76,8 +80,8 @@ class AsyncFeatureTest extends TestCase
         $component->output->done->attach($endId);
 
         $machine = $this->makeMachine();
-        foreach ([$startId, $endId] as $nodeId) {
-            $machine->addNodePublic(new AsyncFeatureNode($nodeId));
+        foreach ($names as $name) {
+            $machine->addNodePublic(new AsyncFeatureNode($name));
         }
         $machine->addDefinition($component);
 
@@ -92,8 +96,12 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function componentCompletesAfterStateIsSet(): void
     {
-        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node3");
-        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node4");
+        $names = [
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node3',
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node4',
+        ];
+        $startId = NodeId::create($names[0]);
+        $endId   = NodeId::create($names[1]);
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -103,8 +111,8 @@ class AsyncFeatureTest extends TestCase
         $component->output->done->attach($endId);
 
         $machine = $this->makeMachine();
-        foreach ([$startId, $endId] as $nodeId) {
-            $machine->addNodePublic(new AsyncFeatureNode($nodeId));
+        foreach ($names as $name) {
+            $machine->addNodePublic(new AsyncFeatureNode($name));
         }
         $machine->addDefinition($component);
 
@@ -124,8 +132,12 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function dispatchedTaskEnvelopeContainsAwaitStateStamp(): void
     {
-        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node5");
-        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node6");
+        $names = [
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node5',
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node6',
+        ];
+        $startId = NodeId::create($names[0]);
+        $endId   = NodeId::create($names[1]);
 
         $component = AsyncComponent::create(
             'payment_result',
@@ -135,8 +147,8 @@ class AsyncFeatureTest extends TestCase
         $component->output->done->attach($endId);
 
         $machine = $this->makeMachine();
-        foreach ([$startId, $endId] as $nodeId) {
-            $machine->addNodePublic(new AsyncFeatureNode($nodeId));
+        foreach ($names as $name) {
+            $machine->addNodePublic(new AsyncFeatureNode($name));
         }
         $machine->addDefinition($component);
 
@@ -161,8 +173,12 @@ class AsyncFeatureTest extends TestCase
     #[Test]
     public function taskFactoryReceivesStates(): void
     {
-        $startId = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node7");
-        $endId   = NodeId::create("state-machine.feature.foundation.component.async.asyncfeaturetes.node8");
+        $names = [
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node7',
+            'state-machine.feature.foundation.component.async.asyncfeaturetes.node8',
+        ];
+        $startId = NodeId::create($names[0]);
+        $endId   = NodeId::create($names[1]);
 
         $receivedStates = null;
         $component = AsyncComponent::create(
@@ -176,8 +192,8 @@ class AsyncFeatureTest extends TestCase
         $component->output->done->attach($endId);
 
         $machine = $this->makeMachine();
-        foreach ([$startId, $endId] as $nodeId) {
-            $machine->addNodePublic(new AsyncFeatureNode($nodeId));
+        foreach ($names as $name) {
+            $machine->addNodePublic(new AsyncFeatureNode($name));
         }
         $machine->addDefinition($component);
 
@@ -202,14 +218,9 @@ class AsyncFeatureMachine extends StateMachine
 
 class AsyncFeatureNode extends Node
 {
-    public function __construct(NodeId $id)
+    public function __construct(string $globallyUniqueName)
     {
-        parent::__construct($id);
-    }
-
-    public function id(): NodeId
-    {
-        return $this->id;
+        parent::__construct($globallyUniqueName);
     }
 
     public function handlerClass(): string

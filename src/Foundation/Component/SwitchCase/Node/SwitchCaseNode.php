@@ -10,6 +10,11 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionSelect
 
 class SwitchCaseNode extends Node
 {
+    public function __construct()
+    {
+        parent::__construct('php-architecture.switch-case.' . uniqid('', true));
+    }
+
     public function handlerClass(): string
     {
         return SwitchCaseNodeHandler::class;
