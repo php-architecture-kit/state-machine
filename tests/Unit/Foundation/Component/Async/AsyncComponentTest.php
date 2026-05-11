@@ -6,7 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\Async;
 
 use PhpArchitecture\StateMachine\Foundation\Component\Async\AsyncComponent;
 use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\AsyncNode;
-use PhpArchitecture\StateMachine\Foundation\Component\AwaitState\Node\AwaitStateNode;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -78,13 +78,13 @@ class AsyncComponentTest extends TestCase
     }
 
     #[Test]
-    public function definedNodesContainAwaitStateNode(): void
+    public function definedNodesContainPassthroughNode(): void
     {
         $component = AsyncComponent::create('result', fn($s) => $this->makeTask());
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
-        $awaitNodes = array_filter($nodes, fn($n) => $n instanceof AwaitStateNode);
-        $this->assertCount(1, $awaitNodes);
+        $passthroughNodes = array_filter($nodes, fn($n) => $n instanceof PassthroughNode);
+        $this->assertCount(1, $passthroughNodes);
     }
 
     #[Test]

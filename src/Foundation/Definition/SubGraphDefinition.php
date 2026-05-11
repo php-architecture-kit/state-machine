@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Definition;
 use PhpArchitecture\Graph\Edge\EdgeInterface;
 use PhpArchitecture\Graph\Graph;
 use PhpArchitecture\Graph\Vertex\VertexInterface;
+use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
@@ -14,15 +15,17 @@ use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
 class SubGraphDefinition extends Definition
 {
     /**
-     * @param array<string,array{node:NodeInterface,condition?:TransitionCondition|callable}> $inputs
-     * @param array<string,array{node:NodeInterface,condition?:TransitionCondition|callable}> $outputs
+     * @param array<string,array{node:NodeInterface|NodeId,condition?:TransitionCondition|callable}> $inputs
+     * @param array<string,array{node:NodeInterface|NodeId,condition?:TransitionCondition|callable}> $outputs
      */
     public static function create(
+        string $name,
         Graph $graph,
         array $inputs,
         array $outputs,
     ): static {
         $instance = static::newInstance(
+            name: $name,
             inputs: array_keys($inputs),
             outputs: array_keys($outputs),
         );

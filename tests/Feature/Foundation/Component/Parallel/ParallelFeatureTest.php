@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\Parallel;
 
-use PhpArchitecture\StateMachine\Foundation\Component\Parallel\ParallelComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\Parallel\Node\ParallelNodeHandler;
+use PhpArchitecture\StateMachine\Foundation\Component\Fork\ForkComponent;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
@@ -29,7 +29,7 @@ class ParallelFeatureTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
-                ParallelNodeHandler::class       => new ParallelNodeHandler(),
+                PassthroughNodeHandler::class     => new PassthroughNodeHandler(),
                 ParallelFeatureNodeHandler::class => new ParallelFeatureNodeHandler(),
                 default => throw new RuntimeException("Unexpected handler: $class"),
             };
@@ -41,25 +41,23 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function forkSpawnsOnePointerPerBranch(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node1',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node2',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node3',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node4',
-        ];
-        $startId = NodeId::create($names[0]);
-        $endAId  = NodeId::create($names[1]);
-        $endBId  = NodeId::create($names[2]);
-        $endCId  = NodeId::create($names[3]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node1";
+        $endAName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node2";
+        $endBName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node3";
+        $endCName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node4";
+        $startId = NodeId::create($startName);
+        $endAId  = NodeId::create($endAName);
+        $endBId  = NodeId::create($endBName);
+        $endCId  = NodeId::create($endCName);
 
-        $component = ParallelComponent::create(['a', 'b', 'c']);
+        $component = ForkComponent::create(['a', 'b', 'c']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
         $component->output->c->attach($endCId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $endAName, $endBName, $endCName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -79,22 +77,20 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function forkCompletesWhenAllBranchesReachTerminalNodes(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node5',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node6',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node7',
-        ];
-        $startId = NodeId::create($names[0]);
-        $endAId  = NodeId::create($names[1]);
-        $endBId  = NodeId::create($names[2]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node5";
+        $endAName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node6";
+        $endBName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node7";
+        $startId = NodeId::create($startName);
+        $endAId  = NodeId::create($endAName);
+        $endBId  = NodeId::create($endBName);
 
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $endAName, $endBName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -110,22 +106,20 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function originalPointerIsRemovedAfterFork(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node8',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node9',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node10',
-        ];
-        $startId = NodeId::create($names[0]);
-        $endAId  = NodeId::create($names[1]);
-        $endBId  = NodeId::create($names[2]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node8";
+        $endAName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node9";
+        $endBName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node10";
+        $startId = NodeId::create($startName);
+        $endAId  = NodeId::create($endAName);
+        $endBId  = NodeId::create($endBName);
 
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $endAName, $endBName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -144,22 +138,20 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function twoBranchForkProducesExactlyTwoForkedEvents(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node11',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node12',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node13',
-        ];
-        $startId = NodeId::create($names[0]);
-        $endAId  = NodeId::create($names[1]);
-        $endBId  = NodeId::create($names[2]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node11";
+        $endAName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node12";
+        $endBName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node13";
+        $startId = NodeId::create($startName);
+        $endAId  = NodeId::create($endAName);
+        $endBId  = NodeId::create($endBName);
 
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $endAName, $endBName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -179,18 +171,16 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function conditionalBranchesOnlyFireWhenPredicateMatches(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node14',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node15',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node16',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node17',
-        ];
-        $startId = NodeId::create($names[0]);
-        $endAId  = NodeId::create($names[1]);
-        $endBId  = NodeId::create($names[2]);
-        $endCId  = NodeId::create($names[3]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node14";
+        $endAName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node15";
+        $endBName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node16";
+        $endCName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node17";
+        $startId = NodeId::create($startName);
+        $endAId  = NodeId::create($endAName);
+        $endBId  = NodeId::create($endBName);
+        $endCId  = NodeId::create($endCName);
 
-        $component = ParallelComponent::create(
+        $component = ForkComponent::create(
             ['a', 'b', 'c'],
             [
                 'b' => fn(States $s): bool => false,
@@ -203,7 +193,7 @@ class ParallelFeatureTest extends TestCase
         $component->output->c->attach($endCId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $endAName, $endBName, $endCName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -222,16 +212,14 @@ class ParallelFeatureTest extends TestCase
     #[Test]
     public function conditionalBranchBasedOnStateFiresCorrectly(): void
     {
-        $names = [
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node18',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node19',
-            'state-machine.feature.foundation.component.parallel.parallelfeat.node20',
-        ];
-        $startId = NodeId::create($names[0]);
-        $highId  = NodeId::create($names[1]);
-        $lowId   = NodeId::create($names[2]);
+        $startName = "state-machine.feature.foundation.component.parallel.parallelfeat.node18";
+        $highName  = "state-machine.feature.foundation.component.parallel.parallelfeat.node19";
+        $lowName   = "state-machine.feature.foundation.component.parallel.parallelfeat.node20";
+        $startId = NodeId::create($startName);
+        $highId  = NodeId::create($highName);
+        $lowId   = NodeId::create($lowName);
 
-        $component = ParallelComponent::create(
+        $component = ForkComponent::create(
             ['high', 'low'],
             [
                 'high' => fn(States $s): bool => ($s->getState('order')?->details['amount']?->value ?? 0) > 1000,
@@ -243,7 +231,7 @@ class ParallelFeatureTest extends TestCase
         $component->output->low->attach($lowId);
 
         $machine = new ParallelFeatureMachine($this->makeContainer());
-        foreach ($names as $name) {
+        foreach ([$startName, $highName, $lowName] as $name) {
             $machine->addNodePublic(new ParallelFeatureNode($name));
         }
         $machine->addDefinition($component);
@@ -272,11 +260,6 @@ class ParallelFeatureMachine extends StateMachine
 
 class ParallelFeatureNode extends Node
 {
-    public function __construct(string $globallyUniqueName)
-    {
-        parent::__construct($globallyUniqueName);
-    }
-
     public function handlerClass(): string
     {
         return ParallelFeatureNodeHandler::class;

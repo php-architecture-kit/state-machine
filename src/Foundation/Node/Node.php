@@ -39,6 +39,11 @@ abstract class Node implements NodeInterface
     /** @return class-string */
     abstract public function handlerClass(): string;
 
+    public function name(): string
+    {
+        return $this->globallyUniqueName;
+    }
+
     /** @return string[] */
     public function tags(): array
     {

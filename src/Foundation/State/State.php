@@ -97,7 +97,7 @@ class State implements ArrayAccess
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->details[$offset];
+        return $this->details[$offset] ?? null;
     }
 
     public function offsetSet(mixed $offset, mixed $value): void

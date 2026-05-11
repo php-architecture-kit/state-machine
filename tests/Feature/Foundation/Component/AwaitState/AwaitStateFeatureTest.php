@@ -7,8 +7,9 @@ namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\AwaitS
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
-use PhpArchitecture\StateMachine\Foundation\Component\AwaitState\AwaitStateComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\AwaitState\Node\AwaitStateNodeHandler;
+use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
+use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
@@ -36,7 +37,7 @@ class AwaitStateFeatureTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
-                AwaitStateNodeHandler::class    => new AwaitStateNodeHandler(),
+                PassthroughNodeHandler::class       => new PassthroughNodeHandler(),
                 AwaitStateFeatureNodeHandler::class => new AwaitStateFeatureNodeHandler(),
                 default => throw new RuntimeException("Unexpected handler: $class"),
             };
@@ -48,9 +49,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineSuspendsWhileAwaitedStateIsAbsent(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node1';
-        $endName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node2';
-        $component = AwaitStateComponent::create('user_answer');
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node1";
+        $endName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node2";
+        $component = AwaitStateComponent::create('user_answer', 'user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithComponent($startName, $endName, $component);
@@ -67,9 +68,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesAfterAwaitedStateIsDefined(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node3';
-        $endName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node4';
-        $component = AwaitStateComponent::create('user_answer');
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node3";
+        $endName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node4";
+        $component = AwaitStateComponent::create('user_answer', 'user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithComponent($startName, $endName, $component);
@@ -88,9 +89,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineSuspendsWhenRequiredDetailMissing(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node5';
-        $endName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node6';
-        $component = AwaitStateComponent::create('user_answer', 'value');
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node5";
+        $endName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node6";
+        $component = AwaitStateComponent::create('user_answer', 'user_answer', 'value');
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithComponent($startName, $endName, $component);
@@ -109,9 +110,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesWhenRequiredDetailIsPresent(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node7';
-        $endName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node8';
-        $component = AwaitStateComponent::create('user_answer', 'value');
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node7";
+        $endName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node8";
+        $component = AwaitStateComponent::create('user_answer', 'user_answer', 'value');
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithComponent($startName, $endName, $component);
@@ -130,9 +131,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function pointerReachesExpiredNodeWhenTimeoutElapsed(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node9';
-        $doneName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node10';
-        $expiredName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node11';
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node9";
+        $doneName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node10";
+        $expiredName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node11";
 
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $afterTimeout = $start->add(new DateInterval('PT61S'));
@@ -146,7 +147,7 @@ class AwaitStateFeatureTest extends TestCase
             },
         );
 
-        $component = AwaitStateComponent::create('user_answer', null, 60, $clock);
+        $component = AwaitStateComponent::create('user_answer', 'user_answer', null, 60, $clock);
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithExpiredOutput($startName, $doneName, $expiredName, $component);
@@ -163,9 +164,9 @@ class AwaitStateFeatureTest extends TestCase
     #[Test]
     public function machineCompletesAfterMultipleSuspendsAndStateDefined(): void
     {
-        $startName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node12';
-        $endName = 'state-machine.feature.foundation.component.awaitstate.awaitstate.node13';
-        $component = AwaitStateComponent::create('user_answer');
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node12";
+        $endName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node13";
+        $component = AwaitStateComponent::create('user_answer', 'user_answer');
 
         $machine = $this->makeMachine($this->makeContainer());
         $machine->buildWithComponent($startName, $endName, $component);
@@ -186,33 +187,33 @@ class AwaitStateFeatureTest extends TestCase
 
 class AwaitStateFeatureMachine extends StateMachine
 {
-    public function buildWithComponent(string $startName, string $endName, AwaitStateComponent $component): void
+    public function buildWithComponent(string $startName, string $endName, Definition $component): void
     {
-        $startNode = new AwaitStateFeatureNode($startName);
-        $endNode = new AwaitStateFeatureNode($endName);
+        $startId = NodeId::create($startName);
+        $endId = NodeId::create($endName);
 
-        $component->input->trigger->attach($startNode->id);
-        $component->output->done->attach($endNode->id);
+        $component->input->at->attach($startId);
+        $component->output->run->attach($endId);
 
-        $this->graph->vertexStore->addVertex($startNode);
-        $this->graph->vertexStore->addVertex($endNode);
+        $this->graph->vertexStore->addVertex(new AwaitStateFeatureNode($startName));
+        $this->graph->vertexStore->addVertex(new AwaitStateFeatureNode($endName));
 
         $this->addDefinition($component);
     }
 
-    public function buildWithExpiredOutput(string $startName, string $doneName, string $expiredName, AwaitStateComponent $component): void
+    public function buildWithExpiredOutput(string $startName, string $doneName, string $expiredName, Definition $component): void
     {
-        $startNode = new AwaitStateFeatureNode($startName);
-        $doneNode = new AwaitStateFeatureNode($doneName);
-        $expiredNode = new AwaitStateFeatureNode($expiredName);
+        $startId = NodeId::create($startName);
+        $doneId = NodeId::create($doneName);
+        $expiredId = NodeId::create($expiredName);
 
-        $component->input->trigger->attach($startNode->id);
-        $component->output->done->attach($doneNode->id);
-        $component->output->expired->attach($expiredNode->id);
+        $component->input->at->attach($startId);
+        $component->output->run->attach($doneId);
+        $component->output->expired->attach($expiredId);
 
-        $this->graph->vertexStore->addVertex($startNode);
-        $this->graph->vertexStore->addVertex($doneNode);
-        $this->graph->vertexStore->addVertex($expiredNode);
+        $this->graph->vertexStore->addVertex(new AwaitStateFeatureNode($startName));
+        $this->graph->vertexStore->addVertex(new AwaitStateFeatureNode($doneName));
+        $this->graph->vertexStore->addVertex(new AwaitStateFeatureNode($expiredName));
 
         $this->addDefinition($component);
     }
@@ -220,11 +221,6 @@ class AwaitStateFeatureMachine extends StateMachine
 
 class AwaitStateFeatureNode extends Node
 {
-    public function __construct(string $globallyUniqueName)
-    {
-        parent::__construct($globallyUniqueName);
-    }
-
     public function handlerClass(): string
     {
         return AwaitStateFeatureNodeHandler::class;

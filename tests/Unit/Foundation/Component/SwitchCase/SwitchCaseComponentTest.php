@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\SwitchCase;
 
-use PhpArchitecture\StateMachine\Foundation\Component\SwitchCase\SwitchCaseComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\SwitchCase\Node\SwitchCaseNode;
+use PhpArchitecture\StateMachine\Foundation\Component\Choice\ChoiceComponent;
+use PhpArchitecture\StateMachine\Foundation\Component\Choice\Node\ChoiceNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -28,7 +28,7 @@ class SwitchCaseComponentTest extends TestCase
      * @param string[] $outputNames
      * @return TransitionInterface[]
      */
-    private function extractTransitions(SwitchCaseComponent $component, array $outputNames): array
+    private function extractTransitions(ChoiceComponent $component, array $outputNames): array
     {
         $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.switchcase.switchcasecom.node1"));
         foreach ($outputNames as $name) {
@@ -43,18 +43,18 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function createReturnsSelfInstance(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'yes' => static fn(States $s): bool => true,
             'no'  => static fn(States $s): bool => false,
         ]);
 
-        $this->assertInstanceOf(SwitchCaseComponent::class, $component);
+        $this->assertInstanceOf(ChoiceComponent::class, $component);
     }
 
     #[Test]
     public function componentHasTriggerInputPort(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'branch' => static fn(States $s): bool => true,
         ]);
 
@@ -64,7 +64,7 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function componentHasOutputPortForEachBranch(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'approved' => static fn(States $s): bool => true,
             'rejected' => static fn(States $s): bool => false,
         ]);
@@ -76,7 +76,7 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function definedNodesContainSwitchCaseNode(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'branch' => static fn(States $s): bool => true,
         ]);
 
@@ -84,19 +84,19 @@ class SwitchCaseComponentTest extends TestCase
 
         $hasNode = false;
         foreach ($nodes as $node) {
-            if ($node instanceof SwitchCaseNode) {
+            if ($node instanceof ChoiceNode) {
                 $hasNode = true;
                 break;
             }
         }
 
-        $this->assertTrue($hasNode, 'SwitchCaseNode must be present in defined nodes.');
+        $this->assertTrue($hasNode, 'ChoiceNode must be present in defined nodes.');
     }
 
     #[Test]
     public function transitionCountEqualsNumberOfBranchesPlusOne(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'a' => static fn(States $s): bool => true,
             'b' => static fn(States $s): bool => false,
             'c' => static fn(States $s): bool => false,
@@ -110,7 +110,7 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function branchTransitionReturnsAcceptedWhenPredicateIsTrue(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'yes' => static fn(States $s): bool => true,
             'no'  => static fn(States $s): bool => false,
         ]);
@@ -126,7 +126,7 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function branchTransitionReturnsRejectedWhenPredicateIsFalse(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'yes' => static fn(States $s): bool => true,
             'no'  => static fn(States $s): bool => false,
         ]);
@@ -143,7 +143,7 @@ class SwitchCaseComponentTest extends TestCase
     public function predicateReceivesStatesObject(): void
     {
         $capturedStates = null;
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'branch' => static function (States $s) use (&$capturedStates): bool {
                 $capturedStates = $s;
                 return true;
@@ -160,7 +160,7 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function firstTriggerTransitionHasNoCondition(): void
     {
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'branch' => static fn(States $s): bool => true,
         ]);
 
@@ -173,7 +173,7 @@ class SwitchCaseComponentTest extends TestCase
     public function branchOrderIsPreserved(): void
     {
         $order = [];
-        $component = SwitchCaseComponent::create([
+        $component = ChoiceComponent::create([
             'first'  => static function (States $s) use (&$order): bool { $order[] = 'first';  return false; },
             'second' => static function (States $s) use (&$order): bool { $order[] = 'second'; return false; },
             'third'  => static function (States $s) use (&$order): bool { $order[] = 'third';  return true;  },

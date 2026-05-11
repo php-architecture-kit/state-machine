@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\Parallel;
 
-use PhpArchitecture\StateMachine\Foundation\Component\Parallel\ParallelComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\Parallel\Node\ParallelNode;
+use PhpArchitecture\StateMachine\Foundation\Component\Fork\ForkComponent;
+use PhpArchitecture\StateMachine\Foundation\Component\Fork\Node\ForkNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -26,7 +26,7 @@ class ParallelComponentTest extends TestCase
      * @param string[] $outputNames
      * @return TransitionInterface[]
      */
-    private function extractTransitions(ParallelComponent $component, array $outputNames): array
+    private function extractTransitions(ForkComponent $component, array $outputNames): array
     {
         $component->input->trigger->attach(NodeId::create("state-machine.unit.foundation.component.parallel.parallelcompone.node1"));
         foreach ($outputNames as $name) {
@@ -41,15 +41,15 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function createReturnsSelfInstance(): void
     {
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
 
-        $this->assertInstanceOf(ParallelComponent::class, $component);
+        $this->assertInstanceOf(ForkComponent::class, $component);
     }
 
     #[Test]
     public function componentHasTriggerInputPort(): void
     {
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
 
         $this->assertInstanceOf(Port::class, $component->input->trigger);
     }
@@ -57,7 +57,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function componentHasOutputPortForEachBranch(): void
     {
-        $component = ParallelComponent::create(['email', 'sms', 'audit']);
+        $component = ForkComponent::create(['email', 'sms', 'audit']);
 
         $this->assertInstanceOf(Port::class, $component->output->email);
         $this->assertInstanceOf(Port::class, $component->output->sms);
@@ -67,24 +67,24 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function definedNodesContainParallelNode(): void
     {
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
-        $hasParallelNode = false;
+        $hasForkNode = false;
         foreach ($nodes as $node) {
-            if ($node instanceof ParallelNode) {
-                $hasParallelNode = true;
+            if ($node instanceof ForkNode) {
+                $hasForkNode = true;
                 break;
             }
         }
 
-        $this->assertTrue($hasParallelNode, 'ParallelNode must be present in defined nodes.');
+        $this->assertTrue($hasForkNode, 'ForkNode must be present in defined nodes.');
     }
 
     #[Test]
     public function transitionCountEqualsBranchesPlusOne(): void
     {
-        $component = ParallelComponent::create(['a', 'b', 'c']);
+        $component = ForkComponent::create(['a', 'b', 'c']);
         $transitions = $this->extractTransitions($component, ['a', 'b', 'c']);
 
         $this->assertCount(4, $transitions);
@@ -93,7 +93,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function allTransitionsHaveNoCondition(): void
     {
-        $component = ParallelComponent::create(['a', 'b']);
+        $component = ForkComponent::create(['a', 'b']);
         $transitions = $this->extractTransitions($component, ['a', 'b']);
 
         foreach ($transitions as $transition) {
@@ -104,7 +104,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function singleBranchIsSupported(): void
     {
-        $component = ParallelComponent::create(['only']);
+        $component = ForkComponent::create(['only']);
         $transitions = $this->extractTransitions($component, ['only']);
 
         $this->assertCount(2, $transitions);
@@ -113,7 +113,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function branchWithoutConditionHasNullCondition(): void
     {
-        $component = ParallelComponent::create(['a', 'b'], ['a' => fn($s) => true]);
+        $component = ForkComponent::create(['a', 'b'], ['a' => fn($s) => true]);
         $transitions = $this->extractTransitions($component, ['a', 'b']);
 
         $conditioned = array_filter($transitions, fn($t) => $t->condition !== null);
@@ -126,7 +126,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function conditionPredicateYieldsAcceptedWhenTrue(): void
     {
-        $component = ParallelComponent::create(
+        $component = ForkComponent::create(
             ['a', 'b'],
             ['b' => fn(States $s): bool => true],
         );
@@ -141,7 +141,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function conditionPredicateYieldsRejectedWhenFalse(): void
     {
-        $component = ParallelComponent::create(
+        $component = ForkComponent::create(
             ['a', 'b'],
             ['b' => fn(States $s): bool => false],
         );
@@ -156,7 +156,7 @@ class ParallelComponentTest extends TestCase
     #[Test]
     public function allBranchesCanHaveConditions(): void
     {
-        $component = ParallelComponent::create(
+        $component = ForkComponent::create(
             ['a', 'b', 'c'],
             [
                 'a' => fn(States $s): bool => true,

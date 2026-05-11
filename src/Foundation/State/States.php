@@ -98,7 +98,7 @@ class States extends AggregateRoot
      * @param string[] $detailsToRemove
      * @throws StateModificationException
      */
-    public function modifyState(StateId $stateId, array $detailsToSet, array $detailsToRemove): void
+    public function modifyState(StateId $stateId, array $detailsToSet = [], array $detailsToRemove = []): void
     {
         $state = $this->states[$stateId->toString()] ?? null;
         if ($state === null) {

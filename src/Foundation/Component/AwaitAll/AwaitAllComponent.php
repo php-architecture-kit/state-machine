@@ -13,49 +13,41 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\Transiti
 class AwaitAllComponent extends Definition
 {
     /**
-     * Creates a join (AND-join) component that waits for all declared branches to arrive
-     * before passing control to the single output.
+     * Creates an AND-join component that waits for ALL declared input branches to arrive
+     * before passing control to the single `done` output.
      *
-     * Each branch gets its own input port backed by a dedicated ArrivalNode. When a pointer
-     * reaches an ArrivalNode its handler records the branch name in States. The SyncNode then
-     * checks whether every expected branch has been recorded and either waits or proceeds.
+     * Each branch gets its own named input port backed by an AwaitAllArrivalNode. When a
+     * pointer passes through an arrival node, the branch is recorded in the
+     * `join-arrived-{componentId}` state. The sync node's outgoing transition then checks
+     * that every branch has been recorded before proceeding.
      *
-     * Usage:
-     *   $join = AwaitAllComponent::create(['notifyEmail', 'notifySms', 'logAudit']);
-     *
-     *   $machine->addDefinition($join);
-     *
-     *   $machine->addTransition($emailNode->id,  $join->input->notifyEmail);
-     *   $machine->addTransition($smsNode->id,    $join->input->notifySms);
-     *   $machine->addTransition($auditNode->id,  $join->input->logAudit);
-     *   $machine->addTransition($join->output->done, $nextNode->id);
-     *
-     * @param string[] $branches  Names of the parallel input branches to synchronize.
+     * @param string[] $branches Names of the input branches (become input port names).
      */
     public static function create(array $branches): self
     {
+        $componentId = bin2hex(random_bytes(8));
+        $syncNode = new AwaitAllSyncNode("state-machine.await-all.sync.{$componentId}");
+
         $instance = self::newInstance(
+            "state-machine.await-all.{$componentId}",
             inputs: $branches,
             outputs: ['done'],
         );
 
-        $componentId = 'join-' . uniqid('', true);
-        $syncNode = new AwaitAllSyncNode();
-
         foreach ($branches as $branch) {
-            $arrivalNode = new AwaitAllArrivalNode("php-architecture.await-all.{$componentId}.{$branch}", $componentId, $branch);
+            $arrivalNode = new AwaitAllArrivalNode(
+                "state-machine.await-all.arrival.{$componentId}.{$branch}",
+                $branch,
+                $componentId,
+            );
 
             $instance->addTransition(
-                $instance->input->{$branch},
+                $instance->input->{$branch}, // @phpstan-ignore-line
                 $arrivalNode,
                 null,
             );
 
-            $instance->addTransition(
-                $arrivalNode,
-                $syncNode,
-                null,
-            );
+            $instance->addTransition($arrivalNode, $syncNode, null);
         }
 
         $instance->addTransition(
@@ -69,7 +61,7 @@ class AwaitAllComponent extends Definition
                 }
 
                 foreach ($branches as $branch) {
-                    if (!isset($state->details[$branch])) {
+                    if ($state[$branch] === null) {
                         return TransitionConditionDecision::Wait;
                     }
                 }

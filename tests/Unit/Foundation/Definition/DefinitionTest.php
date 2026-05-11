@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Definition;
 
+use PhpArchitecture\Graph\Graph;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
+use PhpArchitecture\StateMachine\Foundation\Definition\SubGraphDefinition;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\Node;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
+use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use LogicException;
 
 class DefinitionTest extends TestCase
 {
@@ -239,13 +243,193 @@ class DefinitionTest extends TestCase
         $this->assertCount(2, $nodes);
         $this->assertCount(2, $transitions);
     }
+
+    #[Test]
+    public function mergeThrowsOnDuplicateFreeInputPortNames(): void
+    {
+        $a1 = new ConcreteDefinitionNode('test.merge.guard.a1');
+        $b1 = new ConcreteDefinitionNode('test.merge.guard.b1');
+
+        $graph1 = new Graph();
+        $graph1->vertexStore->addVertex($a1);
+        $graph1->vertexStore->addVertex($b1);
+        $graph1->edgeStore->addEdge(Transition::create($a1->id, $b1->id));
+
+        $def1 = SubGraphDefinition::create(
+            name: 'test.merge.guard.def1',
+            graph: $graph1,
+            inputs: ['shared' => ['node' => $a1]],
+            outputs: ['out1' => ['node' => $b1]],
+        );
+
+        $c1 = new ConcreteDefinitionNode('test.merge.guard.c1');
+        $d1 = new ConcreteDefinitionNode('test.merge.guard.d1');
+
+        $graph2 = new Graph();
+        $graph2->vertexStore->addVertex($c1);
+        $graph2->vertexStore->addVertex($d1);
+        $graph2->edgeStore->addEdge(Transition::create($c1->id, $d1->id));
+
+        $def2 = SubGraphDefinition::create(
+            name: 'test.merge.guard.def2',
+            graph: $graph2,
+            inputs: ['shared' => ['node' => $c1]],
+            outputs: ['out2' => ['node' => $d1]],
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('duplicate input port names found: shared');
+
+        SubGraphDefinition::merge(
+            name: 'test.merge.guard.merged',
+            first: $def1,
+            second: $def2,
+            inputPortMapping: [],
+            outputPortMapping: [],
+        );
+    }
+
+    #[Test]
+    public function mergeThrowsOnDuplicateFreeOutputPortNames(): void
+    {
+        $a1 = new ConcreteDefinitionNode('test.merge.guard2.a1');
+        $b1 = new ConcreteDefinitionNode('test.merge.guard2.b1');
+
+        $graph1 = new Graph();
+        $graph1->vertexStore->addVertex($a1);
+        $graph1->vertexStore->addVertex($b1);
+        $graph1->edgeStore->addEdge(Transition::create($a1->id, $b1->id));
+
+        $def1 = SubGraphDefinition::create(
+            name: 'test.merge.guard2.def1',
+            graph: $graph1,
+            inputs: ['in1' => ['node' => $a1]],
+            outputs: ['shared' => ['node' => $b1]],
+        );
+
+        $c1 = new ConcreteDefinitionNode('test.merge.guard2.c1');
+        $d1 = new ConcreteDefinitionNode('test.merge.guard2.d1');
+
+        $graph2 = new Graph();
+        $graph2->vertexStore->addVertex($c1);
+        $graph2->vertexStore->addVertex($d1);
+        $graph2->edgeStore->addEdge(Transition::create($c1->id, $d1->id));
+
+        $def2 = SubGraphDefinition::create(
+            name: 'test.merge.guard2.def2',
+            graph: $graph2,
+            inputs: ['in2' => ['node' => $c1]],
+            outputs: ['shared' => ['node' => $d1]],
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('duplicate output port names found: shared');
+
+        SubGraphDefinition::merge(
+            name: 'test.merge.guard2.merged',
+            first: $def1,
+            second: $def2,
+            inputPortMapping: [],
+            outputPortMapping: [],
+        );
+    }
+
+    #[Test]
+    public function mergeConnectsTwoDefinitionsAndExposesCorrectPortsAndTransitions(): void
+    {
+        // Definition 1:
+        // inputs: in1, in2, in3  ->  layer1: a1, a2, a3  ->  layer2: b1, b2  ->  outputs: out1, out2
+        $a1 = new ConcreteDefinitionNode('test.merge.a1');
+        $a2 = new ConcreteDefinitionNode('test.merge.a2');
+        $a3 = new ConcreteDefinitionNode('test.merge.a3');
+        $b1 = new ConcreteDefinitionNode('test.merge.b1');
+        $b2 = new ConcreteDefinitionNode('test.merge.b2');
+
+        $graph1 = new Graph();
+        $graph1->vertexStore->addVertex($a1);
+        $graph1->vertexStore->addVertex($a2);
+        $graph1->vertexStore->addVertex($a3);
+        $graph1->vertexStore->addVertex($b1);
+        $graph1->vertexStore->addVertex($b2);
+        $graph1->edgeStore->addEdge(Transition::create($a1->id, $b1->id));
+        $graph1->edgeStore->addEdge(Transition::create($a2->id, $b1->id));
+        $graph1->edgeStore->addEdge(Transition::create($a2->id, $b2->id));
+        $graph1->edgeStore->addEdge(Transition::create($a3->id, $b2->id));
+
+        $def1 = SubGraphDefinition::create(
+            name: 'test.merge.def1',
+            graph: $graph1,
+            inputs: [
+                'in1' => ['node' => $a1],
+                'in2' => ['node' => $a2],
+                'in3' => ['node' => $a3],
+            ],
+            outputs: [
+                'out1' => ['node' => $b1],
+                'out2' => ['node' => $b2],
+            ],
+        );
+
+        // Definition 2:
+        // inputs: in4, in5, in6  ->  layer1: c1, c2, c3  ->  layer2: d1, d2  ->  outputs: out3, out4
+        $c1 = new ConcreteDefinitionNode('test.merge.c1');
+        $c2 = new ConcreteDefinitionNode('test.merge.c2');
+        $c3 = new ConcreteDefinitionNode('test.merge.c3');
+        $d1 = new ConcreteDefinitionNode('test.merge.d1');
+        $d2 = new ConcreteDefinitionNode('test.merge.d2');
+
+        $graph2 = new Graph();
+        $graph2->vertexStore->addVertex($c1);
+        $graph2->vertexStore->addVertex($c2);
+        $graph2->vertexStore->addVertex($c3);
+        $graph2->vertexStore->addVertex($d1);
+        $graph2->vertexStore->addVertex($d2);
+        $graph2->edgeStore->addEdge(Transition::create($c1->id, $d1->id));
+        $graph2->edgeStore->addEdge(Transition::create($c2->id, $d1->id));
+        $graph2->edgeStore->addEdge(Transition::create($c2->id, $d2->id));
+        $graph2->edgeStore->addEdge(Transition::create($c3->id, $d2->id));
+
+        $def2 = SubGraphDefinition::create(
+            name: 'test.merge.def2',
+            graph: $graph2,
+            inputs: [
+                'in4' => ['node' => $c1],
+                'in5' => ['node' => $c2],
+                'in6' => ['node' => $c3],
+            ],
+            outputs: [
+                'out3' => ['node' => $d1],
+                'out4' => ['node' => $d2],
+            ],
+        );
+
+        // def1.out1 -> def2.in4, def1.out2 -> def2.in5 (connected internally via outputPortMapping)
+        // remaining empty inputs: def1.in1, def1.in2, def1.in3, def2.in6 -> 4 wrapper inputs
+        // remaining empty outputs: def2.out3, def2.out4 -> 2 wrapper outputs
+        $merged = SubGraphDefinition::merge(
+            name: 'test.merge.merged',
+            first: $def1,
+            second: $def2,
+            inputPortMapping: [],
+            outputPortMapping: ['out1' => 'in4', 'out2' => 'in5'],
+        );
+
+        [$nodes] = $merged->getDefinedNodesAndTransitions();
+
+        // 10 real nodes (a1-a3, b1-b2, c1-c3, d1-d2) + 2 passthrough nodes connecting out1->in4, out2->in5
+        $this->assertCount(12, $nodes);
+
+        // wrapper must expose 4 inputs (in1,in2,in3 from def1 + in6 from def2) and 2 outputs (out3,out4 from def2)
+        $this->assertCount(4, (array) $merged->input);
+        $this->assertCount(2, (array) $merged->output);
+    }
 }
 
 class ConcreteDefinition extends Definition
 {
-    public function __construct()
+    public function __construct(string $name = 'test.definition')
     {
-        parent::__construct(new stdClass(), new stdClass());
+        parent::__construct($name, new stdClass(), new stdClass());
     }
 
     public function addNodePublic(NodeInterface $node): static
@@ -253,14 +437,14 @@ class ConcreteDefinition extends Definition
         return $this->addNode($node);
     }
 
-    public function addTransitionPublic(NodeId $from, NodeId $to): static
+    public function addTransitionPublic(NodeId $input, NodeId $output): static
     {
-        return $this->addTransition($from, $to);
+        return $this->addTransition($input, $output);
     }
 
-    public function addTransitionWithNodePublic(NodeId|NodeInterface $from, NodeId|NodeInterface $to): static
+    public function addTransitionWithNodePublic(NodeId|NodeInterface $input, NodeId|NodeInterface $output): static
     {
-        return $this->addTransition($from, $to);
+        return $this->addTransition($input, $output);
     }
 }
 
