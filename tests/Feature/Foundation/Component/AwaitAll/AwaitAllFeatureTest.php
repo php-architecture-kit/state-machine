@@ -50,12 +50,12 @@ class AwaitAllFeatureTest extends TestCase
         $midBId  = NodeId::create($midBName);
         $endId   = NodeId::create($endName);
 
-        $fork = ForkComponent::create(['a', 'b']);
+        $fork = ForkComponent::create('fork-test', ['a', 'b']);
         $fork->input->trigger->attach($startId);
         $fork->output->a->attach($midAId);
         $fork->output->b->attach($midBId);
 
-        $join = AwaitAllComponent::create(['a', 'b']);
+        $join = AwaitAllComponent::create('join-test', ['a', 'b']);
         $join->input->a->attach($midAId);
         $join->input->b->attach($midBId);
         $join->output->done->attach($endId);
@@ -85,7 +85,7 @@ class AwaitAllFeatureTest extends TestCase
         $midBId  = NodeId::create($midBName);
         $endId   = NodeId::create($endName);
 
-        $join = AwaitAllComponent::create(['a', 'b']);
+        $join = AwaitAllComponent::create('join-test', ['a', 'b']);
         $join->input->a->attach($midAId);
         $join->input->b->attach($midBId);
         $join->output->done->attach($endId);
@@ -119,13 +119,13 @@ class AwaitAllFeatureTest extends TestCase
         $midCId  = NodeId::create($midCName);
         $endId   = NodeId::create($endName);
 
-        $fork = ForkComponent::create(['a', 'b', 'c']);
+        $fork = ForkComponent::create('fork-test', ['a', 'b', 'c']);
         $fork->input->trigger->attach($startId);
         $fork->output->a->attach($midAId);
         $fork->output->b->attach($midBId);
         $fork->output->c->attach($midCId);
 
-        $join = AwaitAllComponent::create(['a', 'b', 'c']);
+        $join = AwaitAllComponent::create('join-test', ['a', 'b', 'c']);
         $join->input->a->attach($midAId);
         $join->input->b->attach($midBId);
         $join->input->c->attach($midCId);
@@ -158,12 +158,12 @@ class AwaitAllFeatureTest extends TestCase
         $midBId  = NodeId::create($midBName);
         $endId   = NodeId::create($endName);
 
-        $fork = ForkComponent::create(['a', 'b']);
+        $fork = ForkComponent::create('fork-test', ['a', 'b']);
         $fork->input->trigger->attach($startId);
         $fork->output->a->attach($midAId);
         $fork->output->b->attach($midBId);
 
-        $join = AwaitAllComponent::create(['a', 'b']);
+        $join = AwaitAllComponent::create('join-test', ['a', 'b']);
         $join->input->a->attach($midAId);
         $join->input->b->attach($midBId);
         $join->output->done->attach($endId);
@@ -179,17 +179,23 @@ class AwaitAllFeatureTest extends TestCase
         $execution->pointers->startAt($startId);
         $machine->execute($execution);
 
-        $arrivedState = null;
-        foreach ($execution->states->states as $state) {
-            if (str_starts_with($state->name, 'join-arrived-')) {
-                $arrivedState = $state;
-                break;
+        // Nowa implementacja zapisuje arrival info w stanie technicznym jako detale
+        $techState = $execution->states->getTechnicalState();
+
+        // Sprawdź czy są zapisy dla obu branchy (klucze zawierają '.a.arrived' i '.b.arrived')
+        $hasBranchA = false;
+        $hasBranchB = false;
+        foreach ($techState->details as $detailName => $detail) {
+            if (str_ends_with($detailName, '.a.arrived')) {
+                $hasBranchA = true;
+            }
+            if (str_ends_with($detailName, '.b.arrived')) {
+                $hasBranchB = true;
             }
         }
 
-        $this->assertNotNull($arrivedState);
-        $this->assertArrayHasKey('a', $arrivedState->details);
-        $this->assertArrayHasKey('b', $arrivedState->details);
+        $this->assertTrue($hasBranchA, 'Branch A arrival should be recorded in technical state');
+        $this->assertTrue($hasBranchB, 'Branch B arrival should be recorded in technical state');
     }
 }
 

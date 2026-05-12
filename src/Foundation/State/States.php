@@ -90,7 +90,21 @@ class States extends AggregateRoot
             }
         }
 
+        if (in_array($name, self::RESERVED_STATE_NAMES, true)) {
+            $state = $this->defineState($name, []);
+
+            return $state;
+        }
+
         return null;
+    }
+
+    public function getTechnicalState(): State
+    {
+        $state = $this->getState(State::TECHNICAL);
+        assert($state !== null, 'Technical state should always exist');
+
+        return $state;
     }
 
     /**

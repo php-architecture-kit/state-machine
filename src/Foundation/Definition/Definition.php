@@ -17,10 +17,20 @@ use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionConditionCallback;
+use stdClass;
 
 abstract class Definition extends Graph
 {
+    /**
+     * @var stdClass<string,Port>
+     * @phpstan-var stdClass<string,Port>
+     */
     public readonly object $input;
+
+    /**
+     * @var stdClass<string,Port>
+     * @phpstan-var stdClass<string,Port>
+     */
     public readonly object $output;
 
     protected function __construct(
@@ -87,28 +97,40 @@ abstract class Definition extends Graph
     }
 
     /**
-     * @param array<string,string> $inputPortMapping embedded outputs -> embedder inputs
-     * @param array<string,string> $outputPortMapping embedder outputs -> embedded inputs
+     * @param array<string,string|string[]> $inputPortMapping embedded outputs -> embedder inputs
+     * @param array<string,string|string[]> $outputPortMapping embedder outputs -> embedded inputs
      */
     public function embed(Definition $embeddedDefinition, array $inputPortMapping, array $outputPortMapping): static
     {
         // connect ports
-        foreach ($inputPortMapping as $embeddedPortName => $embedderPortName) {
-            $embeddedName = $embeddedDefinition->output->{$embeddedPortName}->name();
-            $embedderName = $this->input->{$embedderPortName}->name();
-            $passthrough = new PassthroughNode("state-machine.port.{$embeddedName}-{$embedderName}");
-            $this->addNode($passthrough);
-            $embeddedDefinition->output->{$embeddedPortName}->attach($passthrough->id);
-            $this->input->{$embedderPortName}->attach($passthrough->id);
+        foreach ($inputPortMapping as $embeddedPortName => $embedderPortNames) {
+            if (is_string($embedderPortNames)) {
+                $embedderPortNames = [$embedderPortNames];
+            }
+
+            foreach ($embedderPortNames as $embedderPortName) {
+                $embeddedName = $embeddedDefinition->output->{$embeddedPortName}->name();
+                $embedderName = $this->input->{$embedderPortName}->name();
+                $passthrough = new PassthroughNode("state-machine.embedded.{$embeddedName}-{$embedderName}");
+                $this->addNode($passthrough);
+                $embeddedDefinition->output->{$embeddedPortName}->attach($passthrough->id);
+                $this->input->{$embedderPortName}->attach($passthrough->id);
+            }
         }
 
-        foreach ($outputPortMapping as $embedderPortName => $embeddedPortName) {
-            $embedderName = $this->output->{$embedderPortName}->name();
-            $embeddedName = $embeddedDefinition->input->{$embeddedPortName}->name();
-            $passthrough = new PassthroughNode("state-machine.port.{$embedderName}-{$embeddedName}");
-            $this->addNode($passthrough);
-            $this->output->{$embedderPortName}->attach($passthrough->id);
-            $embeddedDefinition->input->{$embeddedPortName}->attach($passthrough->id);
+        foreach ($outputPortMapping as $embedderPortName => $embeddedPortNames) {
+            if (is_string($embeddedPortNames)) {
+                $embeddedPortNames = [$embeddedPortNames];
+            }
+
+            foreach ($embeddedPortNames as $embeddedPortName) {
+                $embedderName = $this->output->{$embedderPortName}->name();
+                $embeddedName = $embeddedDefinition->input->{$embeddedPortName}->name();
+                $passthrough = new PassthroughNode("state-machine.embedded.{$embedderName}-{$embeddedName}");
+                $this->addNode($passthrough);
+                $this->output->{$embedderPortName}->attach($passthrough->id);
+                $embeddedDefinition->input->{$embeddedPortName}->attach($passthrough->id);
+            }
         }
 
         // add embedded definition nodes and transitions
@@ -124,8 +146,8 @@ abstract class Definition extends Graph
     }
 
     /**
-     * @param array<string,string> $inputPortMapping embedded outputs -> embedder inputs (second -> first)
-     * @param array<string,string> $outputPortMapping embedder outputs -> embedded inputs (first -> second)
+     * @param array<string,string|string[]> $inputPortMapping embedded outputs -> embedder inputs (second -> first)
+     * @param array<string,string|string[]> $outputPortMapping embedder outputs -> embedded inputs (first -> second)
      */
     public static function merge(
         string $name,
@@ -300,6 +322,10 @@ abstract class Definition extends Graph
             // port id must be replaced with attached node id in each incidence transition
             $nodeId = $node->attachedNode;
             foreach ($nodeTransitions as $transitionId) {
+                // Skip if transition was already removed by another port
+                if (!isset($transitions[$transitionId])) {
+                    continue;
+                }
                 $transition = $transitions[$transitionId];
                 if ($transition->u()->equals($node->id())) {
                     $transitions[$transitionId] = $transition->withInput($nodeId);

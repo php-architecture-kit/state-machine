@@ -6,7 +6,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough;
 
 use PhpArchitecture\StateMachine\Foundation\Node\Node;
 
-final class PassthroughNode extends Node
+class PassthroughNode extends Node
 {
     public function handlerClass(): string
     {

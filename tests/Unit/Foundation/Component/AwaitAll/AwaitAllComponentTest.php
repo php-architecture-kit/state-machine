@@ -33,7 +33,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function createReturnsSelfInstance(): void
     {
-        $component = AwaitAllComponent::create(['a', 'b']);
+        $component = AwaitAllComponent::create('test-component', ['a', 'b']);
 
         $this->assertInstanceOf(AwaitAllComponent::class, $component);
     }
@@ -41,7 +41,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function componentHasInputPortForEachBranch(): void
     {
-        $component = AwaitAllComponent::create(['email', 'sms', 'audit']);
+        $component = AwaitAllComponent::create('test-component', ['email', 'sms', 'audit']);
 
         $this->assertInstanceOf(Port::class, $component->input->email);
         $this->assertInstanceOf(Port::class, $component->input->sms);
@@ -51,7 +51,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function componentHasDoneOutputPort(): void
     {
-        $component = AwaitAllComponent::create(['a', 'b']);
+        $component = AwaitAllComponent::create('test-component', ['a', 'b']);
 
         $this->assertInstanceOf(Port::class, $component->output->done);
     }
@@ -59,7 +59,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function definedNodesContainOneArrivalNodePerBranch(): void
     {
-        $component = AwaitAllComponent::create(['a', 'b', 'c']);
+        $component = AwaitAllComponent::create('test-component', ['a', 'b', 'c']);
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
         $arrivalNodes = array_filter($nodes, static fn($n) => $n instanceof AwaitAllArrivalNode);
@@ -70,7 +70,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function definedNodesContainExactlyOneSyncNode(): void
     {
-        $component = AwaitAllComponent::create(['a', 'b', 'c']);
+        $component = AwaitAllComponent::create('test-component', ['a', 'b', 'c']);
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
         $syncNodes = array_filter($nodes, static fn($n) => $n instanceof AwaitAllSyncNode);
@@ -81,7 +81,7 @@ class AwaitAllComponentTest extends TestCase
     #[Test]
     public function arrivalNodesHaveCorrectBranchNames(): void
     {
-        $component = AwaitAllComponent::create(['foo', 'bar']);
+        $component = AwaitAllComponent::create('test-component', ['foo', 'bar']);
         [$nodes] = $component->getDefinedNodesAndTransitions();
 
         $arrivalNodes = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllArrivalNode));
@@ -92,22 +92,10 @@ class AwaitAllComponentTest extends TestCase
     }
 
     #[Test]
-    public function allArrivalNodesShareTheSameComponentId(): void
-    {
-        $component = AwaitAllComponent::create(['a', 'b', 'c']);
-        [$nodes] = $component->getDefinedNodesAndTransitions();
-
-        $arrivalNodes = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllArrivalNode));
-        $componentIds = array_unique(array_map(static fn(AwaitAllArrivalNode $n) => $n->componentId, $arrivalNodes));
-
-        $this->assertCount(1, $componentIds);
-    }
-
-    #[Test]
     public function transitionCountEqualsNBranchesTimeTwoPlusOne(): void
     {
         $branches = ['a', 'b', 'c'];
-        $component = AwaitAllComponent::create($branches);
+        $component = AwaitAllComponent::create('test-component', $branches);
         $this->attachAll($component, $branches);
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
@@ -119,13 +107,14 @@ class AwaitAllComponentTest extends TestCase
     public function syncTransitionReturnsWaitWhenNoArrivalsRecorded(): void
     {
         $branches = ['a', 'b'];
-        $component = AwaitAllComponent::create($branches);
+        $component = AwaitAllComponent::create('test-component', $branches);
         $this->attachAll($component, $branches);
 
-        [, $transitions] = $component->getDefinedNodesAndTransitions();
+        [$nodes, $transitions] = $component->getDefinedNodesAndTransitions();
+        $syncNode = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllSyncNode))[0];
         $syncTransition = array_values(array_filter(
             $transitions,
-            static fn($t) => $t->condition !== null,
+            static fn($t) => $t->condition !== null && $t->u()->equals($syncNode->id()),
         ))[0];
 
         $states = $this->makeStates();
@@ -138,22 +127,21 @@ class AwaitAllComponentTest extends TestCase
     public function syncTransitionReturnsWaitWhenOnlyPartialArrivalsRecorded(): void
     {
         $branches = ['a', 'b', 'c'];
-        $component = AwaitAllComponent::create($branches);
+        $component = AwaitAllComponent::create('test-component', $branches);
         $this->attachAll($component, $branches);
 
         [$nodes, $transitions] = $component->getDefinedNodesAndTransitions();
+        $syncNode = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllSyncNode))[0];
         $syncTransition = array_values(array_filter(
             $transitions,
-            static fn($t) => $t->condition !== null,
+            static fn($t) => $t->condition !== null && $t->u()->equals($syncNode->id()),
         ))[0];
 
         $arrivalNodes = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllArrivalNode));
-        $componentId = $arrivalNodes[0]->componentId;
 
         $states = $this->makeStates();
-        $states->defineState('join-arrived-' . $componentId, [
-            new \PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail('a', true),
-        ]);
+        $techState = $states->getTechnicalState();
+        $states->modifyState($techState->id, [$arrivalNodes[0]->stateName() => true]);
 
         $decision = $syncTransition->condition->check($states);
 
@@ -164,23 +152,24 @@ class AwaitAllComponentTest extends TestCase
     public function syncTransitionReturnsAcceptedWhenAllBranchesArrived(): void
     {
         $branches = ['a', 'b', 'c'];
-        $component = AwaitAllComponent::create($branches);
+        $component = AwaitAllComponent::create('test-component', $branches);
         $this->attachAll($component, $branches);
 
         [$nodes, $transitions] = $component->getDefinedNodesAndTransitions();
+        $syncNode = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllSyncNode))[0];
         $syncTransition = array_values(array_filter(
             $transitions,
-            static fn($t) => $t->condition !== null,
+            static fn($t) => $t->condition !== null && $t->u()->equals($syncNode->id()),
         ))[0];
 
         $arrivalNodes = array_values(array_filter($nodes, static fn($n) => $n instanceof AwaitAllArrivalNode));
-        $componentId = $arrivalNodes[0]->componentId;
 
         $states = $this->makeStates();
-        $states->defineState('join-arrived-' . $componentId, [
-            new \PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail('a', true),
-            new \PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail('b', true),
-            new \PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail('c', true),
+        $techState = $states->getTechnicalState();
+        $states->modifyState($techState->id, [
+            $arrivalNodes[0]->stateName() => true,
+            $arrivalNodes[1]->stateName() => true,
+            $arrivalNodes[2]->stateName() => true,
         ]);
 
         $decision = $syncTransition->condition->check($states);

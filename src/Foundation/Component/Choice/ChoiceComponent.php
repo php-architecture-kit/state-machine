@@ -8,6 +8,9 @@ use PhpArchitecture\StateMachine\Foundation\Component\Choice\Node\ChoiceNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\FirstValidTransitionStrategy;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionSelectionStrategy;
 
 class ChoiceComponent extends Definition
 {
@@ -17,11 +20,11 @@ class ChoiceComponent extends Definition
      * Branches are evaluated in declaration order; the first matching branch wins
      * (backed by FirstValidTransitionStrategy on ChoiceNode).
      *
-     * @param array<string, callable(States): bool> $branches Map of output-name => predicate.
+     * @param array<string,null|TransitionCondition|callable(States):TransitionConditionDecision> $branches Map of output-name => predicate.
      */
-    public static function create(array $branches): self
+    public static function create(string $uniqueName, array $branches, TransitionSelectionStrategy $strategy = new FirstValidTransitionStrategy()): self
     {
-        $choiceNode = new ChoiceNode();
+        $choiceNode = new ChoiceNode('state-machines.choice.' . $uniqueName, [], $strategy);
         $outputNames = array_keys($branches);
 
         $instance = self::newInstance(
@@ -40,11 +43,7 @@ class ChoiceComponent extends Definition
             $instance->addTransition(
                 $choiceNode,
                 $instance->output->{$outputName}, // @phpstan-ignore-line
-                static function (States $states) use ($predicate): TransitionConditionDecision {
-                    return $predicate($states)
-                        ? TransitionConditionDecision::Accepted
-                        : TransitionConditionDecision::Rejected;
-                },
+                $predicate,
             );
         }
 

@@ -17,6 +17,7 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerForkedEvent;
 use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -50,7 +51,7 @@ class ParallelFeatureTest extends TestCase
         $endBId  = NodeId::create($endBName);
         $endCId  = NodeId::create($endCName);
 
-        $component = ForkComponent::create(['a', 'b', 'c']);
+        $component = ForkComponent::create('test-component', ['a', 'b', 'c']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
@@ -84,7 +85,7 @@ class ParallelFeatureTest extends TestCase
         $endAId  = NodeId::create($endAName);
         $endBId  = NodeId::create($endBName);
 
-        $component = ForkComponent::create(['a', 'b']);
+        $component = ForkComponent::create('test-component', ['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
@@ -113,7 +114,7 @@ class ParallelFeatureTest extends TestCase
         $endAId  = NodeId::create($endAName);
         $endBId  = NodeId::create($endBName);
 
-        $component = ForkComponent::create(['a', 'b']);
+        $component = ForkComponent::create('test-component', ['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
@@ -145,7 +146,7 @@ class ParallelFeatureTest extends TestCase
         $endAId  = NodeId::create($endAName);
         $endBId  = NodeId::create($endBName);
 
-        $component = ForkComponent::create(['a', 'b']);
+        $component = ForkComponent::create('test-component', ['a', 'b']);
         $component->input->trigger->attach($startId);
         $component->output->a->attach($endAId);
         $component->output->b->attach($endBId);
@@ -181,10 +182,11 @@ class ParallelFeatureTest extends TestCase
         $endCId  = NodeId::create($endCName);
 
         $component = ForkComponent::create(
+            'test-component',
             ['a', 'b', 'c'],
             [
-                'b' => fn(States $s): bool => false,
-                'c' => fn(States $s): bool => true,
+                'b' => fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
+                'c' => fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
             ],
         );
         $component->input->trigger->attach($startId);
@@ -220,10 +222,11 @@ class ParallelFeatureTest extends TestCase
         $lowId   = NodeId::create($lowName);
 
         $component = ForkComponent::create(
+            'test-component',
             ['high', 'low'],
             [
-                'high' => fn(States $s): bool => ($s->getState('order')?->details['amount']?->value ?? 0) > 1000,
-                'low'  => fn(States $s): bool => ($s->getState('order')?->details['amount']?->value ?? 0) <= 1000,
+                'high' => fn(States $s): TransitionConditionDecision => ($s->getState('order')?->details['amount']?->value ?? 0) > 1000 ? TransitionConditionDecision::Accepted : TransitionConditionDecision::Rejected,
+                'low'  => fn(States $s): TransitionConditionDecision => ($s->getState('order')?->details['amount']?->value ?? 0) <= 1000 ? TransitionConditionDecision::Accepted : TransitionConditionDecision::Rejected,
             ],
         );
         $component->input->trigger->attach($startId);

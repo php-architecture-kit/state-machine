@@ -11,7 +11,6 @@ use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Definition\SingleNodeDefinition;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
-use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use Psr\Clock\ClockInterface;
@@ -72,29 +71,27 @@ class AwaitStateComponent extends Definition
             return;
         }
 
-        $state = $states->getState(State::TECHNICAL);
-        if ($state === null) {
-            $state = $states->defineState(State::TECHNICAL, []);
-        }
+        $state = $states->getTechnicalState();
 
-        $expiresAt = $state[$nodeId->toString() . ".expiresAt"] ?? null;
-        if ($expiresAt === null) {
-            $states->modifyState($state->id, [$nodeId->toString() . ".expiresAt" => $clock->now()->add(new DateInterval('PT' . $timeout . 'S'))]);
+        $stateName = self::expiredAtStateName($nodeId);
+        if ($state[$stateName] === null) {
+            $states->modifyState($state->id, [$stateName => $clock->now()->add(new DateInterval('PT' . $timeout . 'S'))]);
         }
     }
 
     private static function isExpired(States $states, NodeId $nodeId, ClockInterface $clock): bool
     {
-        $state = $states->getState(State::TECHNICAL);
-        if ($state === null) {
-            return false;
-        }
-
-        $expiresAt = $state[$nodeId->toString() . ".expiresAt"] ?? null;
+        $state = $states->getTechnicalState();
+        $expiresAt = $state[self::expiredAtStateName($nodeId)];
         if ($expiresAt === null) {
             return false;
         }
 
         return $clock->now() > $expiresAt->value;
+    }
+
+    private static function expiredAtStateName(NodeId $nodeId): string
+    {
+        return $nodeId->toString() . ".expiresAt";
     }
 }

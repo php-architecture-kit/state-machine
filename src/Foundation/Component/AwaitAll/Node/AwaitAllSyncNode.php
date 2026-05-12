@@ -4,18 +4,8 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node;
 
-use PhpArchitecture\StateMachine\Foundation\Node\Node;
-use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 
-class AwaitAllSyncNode extends Node
+final class AwaitAllSyncNode extends PassthroughNode
 {
-    public function __construct(string $uniqueName)
-    {
-        parent::__construct($uniqueName);
-    }
-
-    public function handlerClass(): string
-    {
-        return PassthroughNodeHandler::class;
-    }
 }

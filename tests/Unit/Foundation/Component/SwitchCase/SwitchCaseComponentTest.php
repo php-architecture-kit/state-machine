@@ -43,9 +43,9 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function createReturnsSelfInstance(): void
     {
-        $component = ChoiceComponent::create([
-            'yes' => static fn(States $s): bool => true,
-            'no'  => static fn(States $s): bool => false,
+        $component = ChoiceComponent::create('test-component', [
+            'yes' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
+            'no'  => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
         ]);
 
         $this->assertInstanceOf(ChoiceComponent::class, $component);
@@ -54,8 +54,8 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function componentHasTriggerInputPort(): void
     {
-        $component = ChoiceComponent::create([
-            'branch' => static fn(States $s): bool => true,
+        $component = ChoiceComponent::create('test-component', [
+            'branch' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
         ]);
 
         $this->assertInstanceOf(Port::class, $component->input->trigger);
@@ -64,9 +64,9 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function componentHasOutputPortForEachBranch(): void
     {
-        $component = ChoiceComponent::create([
-            'approved' => static fn(States $s): bool => true,
-            'rejected' => static fn(States $s): bool => false,
+        $component = ChoiceComponent::create('test-component', [
+            'approved' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
+            'rejected' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
         ]);
 
         $this->assertInstanceOf(Port::class, $component->output->approved);
@@ -76,8 +76,8 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function definedNodesContainSwitchCaseNode(): void
     {
-        $component = ChoiceComponent::create([
-            'branch' => static fn(States $s): bool => true,
+        $component = ChoiceComponent::create('test-component', [
+            'branch' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
         ]);
 
         [$nodes] = $component->getDefinedNodesAndTransitions();
@@ -96,10 +96,10 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function transitionCountEqualsNumberOfBranchesPlusOne(): void
     {
-        $component = ChoiceComponent::create([
-            'a' => static fn(States $s): bool => true,
-            'b' => static fn(States $s): bool => false,
-            'c' => static fn(States $s): bool => false,
+        $component = ChoiceComponent::create('test-component', [
+            'a' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
+            'b' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
+            'c' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
         ]);
 
         $transitions = $this->extractTransitions($component, ['a', 'b', 'c']);
@@ -110,9 +110,9 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function branchTransitionReturnsAcceptedWhenPredicateIsTrue(): void
     {
-        $component = ChoiceComponent::create([
-            'yes' => static fn(States $s): bool => true,
-            'no'  => static fn(States $s): bool => false,
+        $component = ChoiceComponent::create('test-component', [
+            'yes' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
+            'no'  => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
         ]);
 
         $transitions = $this->extractTransitions($component, ['yes', 'no']);
@@ -126,9 +126,9 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function branchTransitionReturnsRejectedWhenPredicateIsFalse(): void
     {
-        $component = ChoiceComponent::create([
-            'yes' => static fn(States $s): bool => true,
-            'no'  => static fn(States $s): bool => false,
+        $component = ChoiceComponent::create('test-component', [
+            'yes' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
+            'no'  => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Rejected,
         ]);
 
         $transitions = $this->extractTransitions($component, ['yes', 'no']);
@@ -143,10 +143,10 @@ class SwitchCaseComponentTest extends TestCase
     public function predicateReceivesStatesObject(): void
     {
         $capturedStates = null;
-        $component = ChoiceComponent::create([
-            'branch' => static function (States $s) use (&$capturedStates): bool {
+        $component = ChoiceComponent::create('test-component', [
+            'branch' => static function (States $s) use (&$capturedStates): TransitionConditionDecision {
                 $capturedStates = $s;
-                return true;
+                return TransitionConditionDecision::Accepted;
             },
         ]);
 
@@ -160,8 +160,8 @@ class SwitchCaseComponentTest extends TestCase
     #[Test]
     public function firstTriggerTransitionHasNoCondition(): void
     {
-        $component = ChoiceComponent::create([
-            'branch' => static fn(States $s): bool => true,
+        $component = ChoiceComponent::create('test-component', [
+            'branch' => static fn(States $s): TransitionConditionDecision => TransitionConditionDecision::Accepted,
         ]);
 
         $transitions = $this->extractTransitions($component, ['branch']);
@@ -173,10 +173,10 @@ class SwitchCaseComponentTest extends TestCase
     public function branchOrderIsPreserved(): void
     {
         $order = [];
-        $component = ChoiceComponent::create([
-            'first'  => static function (States $s) use (&$order): bool { $order[] = 'first';  return false; },
-            'second' => static function (States $s) use (&$order): bool { $order[] = 'second'; return false; },
-            'third'  => static function (States $s) use (&$order): bool { $order[] = 'third';  return true;  },
+        $component = ChoiceComponent::create('test-component', [
+            'first'  => static function (States $s) use (&$order): TransitionConditionDecision { $order[] = 'first';  return TransitionConditionDecision::Rejected; },
+            'second' => static function (States $s) use (&$order): TransitionConditionDecision { $order[] = 'second'; return TransitionConditionDecision::Rejected; },
+            'third'  => static function (States $s) use (&$order): TransitionConditionDecision { $order[] = 'third';  return TransitionConditionDecision::Accepted;  },
         ]);
 
         $transitions = $this->extractTransitions($component, ['first', 'second', 'third']);

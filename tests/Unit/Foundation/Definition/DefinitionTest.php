@@ -22,7 +22,7 @@ class DefinitionTest extends TestCase
 {
     private function makeDefinition(): ConcreteDefinition
     {
-        return new ConcreteDefinition();
+        return ConcreteDefinition::withPorts('test.definition', [], []);
     }
 
     private function makeNode(string $name): ConcreteDefinitionNode
@@ -423,13 +423,79 @@ class DefinitionTest extends TestCase
         $this->assertCount(4, (array) $merged->input);
         $this->assertCount(2, (array) $merged->output);
     }
+
+    #[Test]
+    public function embedWithSingleStringPortMappingCreatesOnePassthroughNode(): void
+    {
+        // Test backward compatibility - single string mapping
+        $embedder = ConcreteDefinition::withPorts('test.embedder', ['input'], []);
+        $embedded = ConcreteDefinition::withPorts('test.embedded', [], ['output']);
+
+        // Add a node to embedded definition so it's not empty
+        $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
+        $embedded->addNodePublic($embeddedNode);
+        $embedded->output->output->attach($embeddedNode->id());
+
+        // Embed with single string mapping (backward compatibility)
+        $embedder->embed($embedded, ['output' => 'input'], []);
+
+        [$nodes] = $embedder->getDefinedNodesAndTransitions();
+
+        // Should have: 1 passthrough node + 1 embedded node
+        $this->assertCount(2, $nodes);
+    }
+
+    #[Test]
+    public function embedWithArrayPortMappingCreatesMultiplePassthroughNodes(): void
+    {
+        // Test new feature - array of strings mapping
+        $embedder = ConcreteDefinition::withPorts('test.embedder', ['input1', 'input2'], []);
+        $embedded = ConcreteDefinition::withPorts('test.embedded', [], ['output']);
+
+        // Add a node to embedded definition
+        $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
+        $embedded->addNodePublic($embeddedNode);
+        $embedded->output->output->attach($embeddedNode->id());
+
+        // Embed with array mapping - one embedded output to multiple embedder inputs
+        $embedder->embed($embedded, ['output' => ['input1', 'input2']], []);
+
+        [$nodes] = $embedder->getDefinedNodesAndTransitions();
+
+        // Should have: 2 passthrough nodes + 1 embedded node
+        $this->assertCount(3, $nodes);
+    }
+
+    #[Test]
+    public function embedOutputMappingWithArrayCreatesMultiplePassthroughNodes(): void
+    {
+        // Test output port mapping with array
+        $embedder = ConcreteDefinition::withPorts('test.embedder', [], ['output']);
+        $embedded = ConcreteDefinition::withPorts('test.embedded', ['input1', 'input2'], []);
+
+        // Add a node to embedded definition
+        $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
+        $embedded->addNodePublic($embeddedNode);
+
+        // Embed with array output mapping - one embedder output to multiple embedded inputs
+        $embedder->embed($embedded, [], ['output' => ['input1', 'input2']]);
+
+        [$nodes] = $embedder->getDefinedNodesAndTransitions();
+
+        // Should have: 2 passthrough nodes + 1 embedded node
+        $this->assertCount(3, $nodes);
+    }
 }
 
 class ConcreteDefinition extends Definition
 {
-    public function __construct(string $name = 'test.definition')
+    /**
+     * @param string[] $inputs
+     * @param string[] $outputs
+     */
+    public static function withPorts(string $name, array $inputs, array $outputs): static
     {
-        parent::__construct($name, new stdClass(), new stdClass());
+        return static::newInstance($name, $inputs, $outputs);
     }
 
     public function addNodePublic(NodeInterface $node): static

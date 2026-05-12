@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace PhpArchitecture\StateMachine\Foundation\Component\Async;
 
 use Closure;
-use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\AsyncNode;
+use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\AsyncTaskExecutedNode;
+use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\AsyncTaskResult;
+use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\CreateAsyncTaskNode;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Task\Task;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\FirstValidTransitionStrategy;
 use Psr\Clock\ClockInterface;
 
 class AsyncComponent extends Definition
@@ -21,46 +26,71 @@ class AsyncComponent extends Definition
      * An AwaitStateStamp carrying $stateName is added automatically to the dispatched Task,
      * so the external process that handles the task knows which state key to write back.
      *
-     * The pointer then suspends (via AwaitStateComponent) until $stateName (optionally with
-     * $detailName) appears in States. An optional $timeout drives the expired output.
+     * The pointer then suspends (via AwaitStateComponent) until $stateName appears in States.
+     * An optional $timeout drives the expired output.
      *
      * Outputs:
-     *   - done    — the awaited state appeared before timeout (or no timeout set)
-     *   - expired — the timeout elapsed before the state appeared (never fires when $timeout is null)
+     *   - success — the awaited state appeared with AsyncTaskResult::Success
+     *   - fail    — the awaited state appeared with AsyncTaskResult::Fail
+     *   - expired — the timeout elapsed before the state appeared
      *
-     * @param Closure(States): Task $taskFactory
+     * @param Closure(States):Task $taskFactory
      */
     public static function create(
-        string $stateName,
+        string $uniqueName,
         Closure $taskFactory,
-        ?string $detailName = null,
         ?int $timeout = null,
         ?ClockInterface $clock = null,
     ): self {
+        $baseName = "state-machine.async-task.{$uniqueName}";
+
         $instance = self::newInstance(
-            "state-machine.async.{$stateName}",
+            $baseName,
             inputs: ['trigger'],
-            outputs: ['done', 'expired'],
+            outputs: ['success', 'fail', 'expired'],
         );
 
-        $asyncNode = new AsyncNode("state-machine.async.{$stateName}.dispatch", $stateName, $taskFactory);
-        $awaitComponent = AwaitStateComponent::create($stateName, $stateName, $detailName, $timeout, $clock);
+        $createAsyncTaskNode = new CreateAsyncTaskNode("{$baseName}.dispatch", $taskFactory);
+        $instance->addNode($createAsyncTaskNode);
+        $instance->addTransition($instance->input->trigger->id(), $createAsyncTaskNode->id(), null);
+        
+        $executedTaskNode = new AsyncTaskExecutedNode("{$baseName}.executed", [], new FirstValidTransitionStrategy());
+        $instance->addNode($executedTaskNode);
 
-        $awaitComponent->input->at->attach($asyncNode->id);
-        $awaitComponent->output->run->attach($instance->output->done->id);
-        $awaitComponent->output->expired->attach($instance->output->expired->id);
+        $awaitComponent = AwaitStateComponent::create(
+            $uniqueName,
+            State::TECHNICAL,
+            $createAsyncTaskNode->stateName(),
+            $timeout,
+            $clock,
+        );
 
-        [$awaitNodes, $awaitTransitions] = $awaitComponent->getDefinedNodesAndTransitions();
+        $awaitComponent->input->at->attach($createAsyncTaskNode->id);
+        $awaitComponent->output->run->attach($executedTaskNode->id);
 
-        $instance->addTransition($instance->input->trigger, $asyncNode, null);
+        $instance->embed($awaitComponent, [], []);
 
-        foreach ($awaitNodes as $node) {
-            $instance->addNode($node);
-        }
+        $instance->addTransition(
+            $awaitComponent->output->expired->id(),
+            $instance->output->expired->id(),
+            null,
+        );
 
-        foreach ($awaitTransitions as $transition) {
-            $instance->addTransition($transition->input, $transition->output, $transition->condition);
-        }
+        $instance->addTransition(
+            $awaitComponent->output->run->id(),
+            $instance->output->success->id(),
+            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()] === AsyncTaskResult::Success
+                ? TransitionConditionDecision::Accepted
+                : TransitionConditionDecision::Rejected,
+        );
+
+        $instance->addTransition(
+            $awaitComponent->output->run->id(),
+            $instance->output->fail->id(),
+            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()] === AsyncTaskResult::Fail
+                ? TransitionConditionDecision::Accepted
+                : TransitionConditionDecision::Rejected,
+        );
 
         return $instance;
     }

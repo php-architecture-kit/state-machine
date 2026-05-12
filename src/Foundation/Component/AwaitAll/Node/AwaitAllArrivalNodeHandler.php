@@ -15,15 +15,10 @@ class AwaitAllArrivalNodeHandler implements NodeHandlerInterface
         $node = $context->node;
         assert($node instanceof AwaitAllArrivalNode);
 
-        $stateName = 'join-arrived-' . $node->componentId;
-        $state = $context->states->getState($stateName);
-
-        if ($state === null) {
-            $state = $context->states->defineState($stateName, []);
-        }
-
-        if ($state[$node->branchName] === null) {
-            $context->states->modifyState($state->id, [$node->branchName => true]);
+        $state = $context->states->getTechnicalState();
+        $stateName = $node->stateName();
+        if ($state[$stateName] === null) {
+            $context->states->modifyState($state->id, [$stateName => true]);
         }
 
         return NodeHandlerResult::Continue;

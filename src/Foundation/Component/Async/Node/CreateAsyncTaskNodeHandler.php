@@ -9,15 +9,15 @@ use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerResult;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Stamp\AwaitStateStamp;
 
-class AsyncNodeHandler implements NodeHandlerInterface
+class CreateAsyncTaskNodeHandler implements NodeHandlerInterface
 {
     public function handle(NodeHandlerContext $context): NodeHandlerResult
     {
         $node = $context->node;
-        assert($node instanceof AsyncNode);
+        assert($node instanceof CreateAsyncTaskNode);
 
         $task = ($node->taskFactory)($context->states);
-        $context->dispatchTask($task, [new AwaitStateStamp($node->stateName)]);
+        $context->dispatchTask($task, [new AwaitStateStamp($node->stateName())]);
 
         return NodeHandlerResult::Continue;
     }

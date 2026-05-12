@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\Fork;
 
+use LogicException;
 use PhpArchitecture\StateMachine\Foundation\Component\Fork\Node\ForkNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
+use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\AllValidTransitionsStrategy;
+use PhpArchitecture\Technical\Assert;
 
 class ForkComponent extends Definition
 {
@@ -18,11 +22,13 @@ class ForkComponent extends Definition
      * $conditions to make specific branches conditional — branches without a predicate always fire.
      *
      * @param string[]                              $branches   Names of the parallel output branches.
-     * @param array<string, callable(States): bool> $conditions Optional map of branch-name => predicate.
+     * @param array<string,null|TransitionCondition|callable(States):TransitionConditionDecision> $conditions Optional map of branch-name => predicate.
      */
-    public static function create(array $branches, array $conditions = []): self
+    public static function create(string $uniqueName, array $branches, array $conditions = []): self
     {
-        $forkNode = new ForkNode();
+        Assert::eachString($branches);
+
+        $forkNode = new ForkNode('state-machines.fork.' . $uniqueName, [], new AllValidTransitionsStrategy());
 
         $instance = self::newInstance(
             $forkNode->name(),
@@ -37,18 +43,10 @@ class ForkComponent extends Definition
         );
 
         foreach ($branches as $branch) {
-            $predicate = $conditions[$branch] ?? null;
-
             $instance->addTransition(
                 $forkNode,
                 $instance->output->{$branch}, // @phpstan-ignore-line
-                $predicate === null
-                    ? null
-                    : static function (States $states) use ($predicate): TransitionConditionDecision {
-                        return $predicate($states)
-                            ? TransitionConditionDecision::Accepted
-                            : TransitionConditionDecision::Rejected;
-                    },
+                $conditions[$branch] ?? null,
             );
         }
 

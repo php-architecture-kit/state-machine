@@ -9,6 +9,7 @@ use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllSync
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
+use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\AllValidTransitionsStrategy;
 
 class AwaitAllComponent extends Definition
 {
@@ -23,22 +24,21 @@ class AwaitAllComponent extends Definition
      *
      * @param string[] $branches Names of the input branches (become input port names).
      */
-    public static function create(array $branches): self
+    public static function create(string $uniqueName, array $branches): self
     {
-        $componentId = bin2hex(random_bytes(8));
-        $syncNode = new AwaitAllSyncNode("state-machine.await-all.sync.{$componentId}");
+        $syncNode = new AwaitAllSyncNode("state-machine.await-all.sync.{$uniqueName}.sync", []);
 
         $instance = self::newInstance(
-            "state-machine.await-all.{$componentId}",
+            "state-machine.await-all.{$uniqueName}.wait-for",
             inputs: $branches,
             outputs: ['done'],
         );
 
+        $arrivalStates = [];
         foreach ($branches as $branch) {
             $arrivalNode = new AwaitAllArrivalNode(
-                "state-machine.await-all.arrival.{$componentId}.{$branch}",
+                "state-machine.await-all.{$uniqueName}.arrival.{$branch}",
                 $branch,
-                $componentId,
             );
 
             $instance->addTransition(
@@ -47,21 +47,25 @@ class AwaitAllComponent extends Definition
                 null,
             );
 
-            $instance->addTransition($arrivalNode, $syncNode, null);
+            $instance->addTransition(
+                $arrivalNode,
+                $syncNode,
+                static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$arrivalNode->stateName()] !== null
+                    ? TransitionConditionDecision::Accepted
+                    : TransitionConditionDecision::Wait,
+            );
+
+            $arrivalStates[$branch] = $arrivalNode->stateName();
         }
 
         $instance->addTransition(
             $syncNode,
             $instance->output->done, // @phpstan-ignore-line
-            static function (States $states) use ($componentId, $branches): TransitionConditionDecision {
-                $state = $states->getState('join-arrived-' . $componentId);
+            static function (States $states) use ($arrivalStates): TransitionConditionDecision {
+                $state = $states->getTechnicalState();
 
-                if ($state === null) {
-                    return TransitionConditionDecision::Wait;
-                }
-
-                foreach ($branches as $branch) {
-                    if ($state[$branch] === null) {
+                foreach ($arrivalStates as $branch => $stateName) {
+                    if ($state[$stateName] === null) {
                         return TransitionConditionDecision::Wait;
                     }
                 }
