@@ -31,6 +31,7 @@ class TransitionMappingStrategy implements StateMachineViewMappingStrategy
 
         return new TransitionView(
             id: $resource->id()->toString(),
+            class: get_class($resource),
             from: $resource->u()->toString(),
             to: $resource->v()->toString(),
             tags: $resource->tags(),

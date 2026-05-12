@@ -26,11 +26,11 @@ class SingleNodeDefinition extends Definition
         $instance->addNode($node);
 
         foreach ($inputs as $input => $condition) {
-            $instance->addTransition($instance->input->{$input}, $node, $condition);
+            $instance->addTransition($instance->input->{$input}, $node, $condition, [$input]);
         }
 
         foreach ($outputs as $output => $condition) {
-            $instance->addTransition($node, $instance->output->{$output}, $condition);
+            $instance->addTransition($node, $instance->output->{$output}, $condition, [$output]);
         }
 
         return $instance;

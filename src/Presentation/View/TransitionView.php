@@ -7,11 +7,12 @@ namespace PhpArchitecture\StateMachine\Presentation\View;
 class TransitionView
 {
     /**
-     * @param string[]             $tags
+     * @param string[] $tags
      * @param array<string, mixed> $__otherProperties
      */
     public function __construct(
         public readonly string $id,
+        public readonly string $class,
         public readonly string $from,
         public readonly string $to,
         public readonly array $tags,
@@ -25,6 +26,7 @@ class TransitionView
         return array_merge(
             [
                 'id'        => $this->id,
+                'class'     => $this->class,
                 'from'      => $this->from,
                 'to'        => $this->to,
                 'tags'      => $this->tags,

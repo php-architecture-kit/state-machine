@@ -64,8 +64,9 @@ abstract class Definition extends Graph
 
     /**
      * @param null|TransitionCondition|callable(States):TransitionConditionDecision $condition
+     * @param string[] $tags
      */
-    protected function addTransition(NodeId|NodeInterface $input, NodeId|NodeInterface $output, null|callable|TransitionCondition $condition = null): static
+    protected function addTransition(NodeId|NodeInterface $input, NodeId|NodeInterface $output, null|callable|TransitionCondition $condition = null, array $tags = []): static
     {
         foreach (['input', 'output'] as $node) {
             if (${$node} instanceof NodeInterface) {
@@ -81,7 +82,7 @@ abstract class Definition extends Graph
             $condition = TransitionConditionCallback::define($condition);
         }
 
-        $this->edgeStore->addEdge(Transition::create($input, $output, $condition)); // @phpstan-ignore-line
+        $this->edgeStore->addEdge(Transition::create($input, $output, $condition, $tags)); // @phpstan-ignore-line
 
         return $this;
     }

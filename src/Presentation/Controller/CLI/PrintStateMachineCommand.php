@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Presentation\Controller\CLI;
 
+use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
+use PhpArchitecture\StateMachine\Infrastructure\Mapper\View\DefinitionViewMapperInterface;
 use PhpArchitecture\StateMachine\Infrastructure\Mapper\View\StateMachineViewMapperInterface;
 use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
@@ -23,7 +25,8 @@ class PrintStateMachineCommand extends Command
     public const DEFAULT_OUTPUT_DIR = 'var/state-machine/print';
 
     public function __construct(
-        private readonly StateMachineViewMapperInterface $mapper,
+        private readonly StateMachineViewMapperInterface $stateMachineMapper,
+        private readonly DefinitionViewMapperInterface $definitionMapper,
     ) {
         parent::__construct();
     }
@@ -36,7 +39,7 @@ class PrintStateMachineCommand extends Command
             ->addArgument(
                 'factoryCallback',
                 InputArgument::OPTIONAL,
-                'PHP expression (passed to eval()) that returns a StateMachine instance',
+                'PHP expression (passed to eval()) that returns a StateMachine or Definition instance',
             )
             ->addOption(
                 'plantuml',
@@ -56,20 +59,28 @@ class PrintStateMachineCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $stateMachine = $this->resolveStateMachine($input, $io);
-        if ($stateMachine === null) {
+        $result = $this->resolveResource($input, $io);
+        if ($result === null) {
             return Command::FAILURE;
         }
 
-        $view      = $this->mapper->map($stateMachine);
+        $isStateMachine = $result instanceof StateMachine;
         $plantuml  = (bool) $input->getOption('plantuml');
         $extension = $plantuml ? 'puml' : 'yaml';
 
-        $outputPath = $this->resolveOutputPath($input, $stateMachine, $extension);
+        $outputPath = $this->resolveOutputPath($input, $result, $extension);
 
-        $content = $plantuml
-            ? $this->renderPlantuml($view->toArray(), $stateMachine)
-            : $this->renderYaml($view->toArray());
+        if ($isStateMachine) {
+            $view = $this->stateMachineMapper->map($result);
+            $content = $plantuml
+                ? $this->renderPlantuml($view->toArray(), $result)
+                : $this->renderYaml($view->toArray());
+        } else {
+            $view = $this->definitionMapper->map($result);
+            $content = $plantuml
+                ? $this->renderDefinitionPlantuml($view->toArray(), $result)
+                : $this->renderYaml($view->toArray());
+        }
 
         $directory = dirname($outputPath);
         if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
@@ -83,13 +94,13 @@ class PrintStateMachineCommand extends Command
         return Command::SUCCESS;
     }
 
-    protected function resolveStateMachine(InputInterface $input, SymfonyStyle $io): ?StateMachine
+    protected function resolveResource(InputInterface $input, SymfonyStyle $io): StateMachine|Definition|null
     {
         $factoryCallback = $input->getArgument('factoryCallback');
 
         if ($factoryCallback === null) {
             $io->error(
-                'No factoryCallback provided. Pass a PHP expression that returns a StateMachine instance.',
+                'No factoryCallback provided. Pass a PHP expression that returns a StateMachine or Definition instance.',
             );
             return null;
         }
@@ -103,10 +114,11 @@ class PrintStateMachineCommand extends Command
             return null;
         }
 
-        if (!$result instanceof StateMachine) {
+        if (!$result instanceof StateMachine && !$result instanceof Definition) {
             $io->error(sprintf(
-                'factoryCallback must return an instance of %s, got %s.',
+                'factoryCallback must return an instance of %s or %s, got %s.',
                 StateMachine::class,
+                Definition::class,
                 get_debug_type($result),
             ));
             return null;
@@ -124,22 +136,97 @@ class PrintStateMachineCommand extends Command
     /** @param array<string, mixed> $data */
     protected function renderPlantuml(array $data, StateMachine $stateMachine): string
     {
-        $yaml    = $this->renderYaml($data);
-        $diagram = "@startuml\n" . "' State Machine: " . get_class($stateMachine) . "\n" . $yaml . "\n@enduml";
+        $diagram = $this->buildPlantumlDiagram($data, 'State Machine: ' . get_class($stateMachine));
         $encoded = encodep($diagram);
 
         return $diagram . "\n\n' PlantUML server URL:\n' https://www.plantuml.com/plantuml/uml/{$encoded}\n";
     }
 
-    protected function resolveOutputPath(InputInterface $input, StateMachine $stateMachine, string $extension): string
+    /** @param array<string, mixed> $data */
+    protected function renderDefinitionPlantuml(array $data, Definition $definition): string
+    {
+        $diagram = $this->buildPlantumlDiagram($data, 'Definition: ' . get_class($definition));
+        $encoded = encodep($diagram);
+
+        return $diagram . "\n\n' PlantUML server URL:\n' https://www.plantuml.com/plantuml/uml/{$encoded}\n";
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function buildPlantumlDiagram(array $data, string $title): string
+    {
+        $lines = ['@startuml', "' {$title}", ''];
+
+        // Add nodes as components
+        $lines[] = "' Nodes";
+        foreach ($data['nodes'] ?? [] as $node) {
+            $id = $this->sanitizeId($node['id'] ?? 'unknown');
+            $class = $this->extractShortClass($node['class'] ?? 'Unknown');
+            $name = $node['globallyUniqueName'] ?? $id;
+            $lines[] = "component \"{$name}\\n({$class})\" as {$id}";
+        }
+
+        $lines[] = '';
+
+        // Add transitions
+        $lines[] = "' Transitions";
+        foreach ($data['transitions'] ?? [] as $transition) {
+            $from = $this->sanitizeId($transition['from'] ?? 'unknown');
+            $to = $this->sanitizeId($transition['to'] ?? 'unknown');
+            $label = $this->buildTransitionLabel($transition);
+            $lines[] = "{$from} --> {$to}{$label}";
+        }
+
+        $lines[] = '';
+        $lines[] = '@enduml';
+
+        return implode("\n", $lines);
+    }
+
+    private function sanitizeId(string $id): string
+    {
+        // PlantUML IDs can't contain dashes and some other chars
+        return 'id_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $id);
+    }
+
+    private function extractShortClass(string $fqcn): string
+    {
+        $parts = explode('\\', $fqcn);
+        return end($parts);
+    }
+
+    private function extractShortName(string $name): string
+    {
+        // Extract last segment from dotted name like "state-machine.retry.test.input.trigger"
+        $parts = explode('.', $name);
+        return end($parts) ?: $name;
+    }
+
+    /**
+     * @param array<string, mixed> $transition
+     */
+    private function buildTransitionLabel(array $transition): string
+    {
+        // Use tags as transition label (e.g., "success", "failure", "trigger")
+        $tags = $transition['tags'] ?? [];
+        if (!empty($tags)) {
+            return ' : ' . implode(', ', $tags);
+        }
+
+        return '';
+    }
+
+    protected function resolveOutputPath(InputInterface $input, StateMachine|Definition $resource, string $extension): string
     {
         $customPath = $input->getOption('output');
         if ($customPath !== null) {
             return $customPath;
         }
 
-        $shortName = (new ReflectionClass($stateMachine))->getShortName();
+        $shortName = (new ReflectionClass($resource))->getShortName();
 
         return sprintf('%s/%s.%s', self::DEFAULT_OUTPUT_DIR, $shortName, $extension);
     }
+
 }
