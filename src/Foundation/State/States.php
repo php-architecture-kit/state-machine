@@ -19,6 +19,7 @@ use PhpArchitecture\StateMachine\Foundation\State\Policy\StateDefinitionPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Policy\StateModificationPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Policy\StateRemovalPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
+use PhpArchitecture\StateMachine\Foundation\State\Resolver\StateResolverInterface;
 use PhpArchitecture\Technical\ArrayTransformation;
 use PhpArchitecture\Technical\Assert;
 
@@ -27,6 +28,7 @@ class States extends AggregateRoot
     public const RESERVED_STATE_NAMES = [State::Technical];
 
     /**
+     * @param StateResolverInterface[] $resolvers
      * @param State[] $states
      */
     protected function __construct(
@@ -34,23 +36,30 @@ class States extends AggregateRoot
         public readonly ?StateDefinitionPolicy $definitionPolicy,
         public readonly ?StateModificationPolicy $modificationPolicy,
         public readonly ?StateRemovalPolicy $removalPolicy,
+        public readonly array $resolvers,
         public protected(set) array $states,
     ) {
+        Assert::eachInstanceOf($resolvers, StateResolverInterface::class);
         Assert::eachInstanceOf($states, State::class);
         $this->states = ArrayTransformation::indexBy($states, static fn(State $state) => $state->id->toString());
     }
 
+    /**
+     * @param StateResolverInterface[] $resolvers
+     */
     public static function create(
         ExecutionId $executionId,
         ?StateDefinitionPolicy $definitionPolicy,
         ?StateModificationPolicy $modificationPolicy,
         ?StateRemovalPolicy $removalPolicy,
+        array $resolvers = [],
     ): static {
         /** @phpstan-ignore-next-line */
-        return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, []);
+        return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, $resolvers, []);
     }
 
     /**
+     * @param StateResolverInterface[] $resolvers
      * @param State[] $states
      */
     public static function recreate(
@@ -58,10 +67,11 @@ class States extends AggregateRoot
         ?StateDefinitionPolicy $definitionPolicy,
         ?StateModificationPolicy $modificationPolicy,
         ?StateRemovalPolicy $removalPolicy,
+        array $resolvers,
         array $states,
     ): static {
         /** @phpstan-ignore-next-line */
-        return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, $states);
+        return new static($executionId, $definitionPolicy, $modificationPolicy, $removalPolicy, $resolvers, $states);
     }
 
     /**
@@ -94,6 +104,12 @@ class States extends AggregateRoot
             $state = $this->defineState($name, []);
 
             return $state;
+        }
+
+        foreach ($this->resolvers as $resolver) {
+            if ($resolver->supports($this, $name)) {
+                return $resolver->resolve($this, $name);
+            }
         }
 
         return null;

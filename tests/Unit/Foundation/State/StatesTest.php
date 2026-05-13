@@ -49,7 +49,7 @@ class StatesTest extends TestCase
     {
         $executionId = ExecutionId::new();
         $state = State::create($executionId, 'order', []);
-        $states = States::recreate($executionId, null, null, null, [$state]);
+        $states = States::recreate($executionId, null, null, null, [], [$state]);
 
         $this->assertArrayHasKey($state->id->toString(), $states->states);
     }

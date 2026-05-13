@@ -12,6 +12,7 @@ use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerTransitionPoli
 use PhpArchitecture\StateMachine\Foundation\State\Policy\StateDefinitionPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Policy\StateModificationPolicy;
 use PhpArchitecture\StateMachine\Foundation\State\Policy\StateRemovalPolicy;
+use PhpArchitecture\StateMachine\Foundation\State\Resolver\StateResolverInterface;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 
 class Execution
@@ -22,6 +23,7 @@ class Execution
         public readonly States $states,
     ) {}
 
+    /** @param StateResolverInterface[] $stateResolvers */
     public static function create(
         ?PointerCreationPolicy $pointerCreationPolicy = null,
         ?PointerTransitionPolicy $pointerTransitionPolicy = null,
@@ -29,6 +31,7 @@ class Execution
         ?StateDefinitionPolicy $stateDefinitionPolicy = null,
         ?StateModificationPolicy $stateModificationPolicy = null,
         ?StateRemovalPolicy $stateRemovalPolicy = null,
+        array $stateResolvers = [],
     ): static {
         $id = ExecutionId::new();
 
@@ -36,7 +39,7 @@ class Execution
         return new static(
             $id,
             Pointers::create($id, $pointerCreationPolicy, $pointerTransitionPolicy, $pointerRemovalPolicy),
-            States::create($id, $stateDefinitionPolicy, $stateModificationPolicy, $stateRemovalPolicy),
+            States::create($id, $stateDefinitionPolicy, $stateModificationPolicy, $stateRemovalPolicy, $stateResolvers),
         );
     }
 
