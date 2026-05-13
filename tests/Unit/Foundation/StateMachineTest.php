@@ -233,7 +233,7 @@ class StateMachineTest extends TestCase
     }
 
     #[Test]
-    public function handlerIsNotInvokedAgainOnSubsequentExecuteAfterSuspended(): void
+    public function handlerIsInvokedAgainOnSubsequentExecuteAfterSuspended(): void
     {
         $handlerA = new CountingHandler(NodeHandlerResult::Suspended);
         $handlerBC = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
@@ -265,11 +265,11 @@ class StateMachineTest extends TestCase
         $machine->execute($execution);
         $machine->execute($execution);
 
-        $this->assertSame(1, $handlerA->callCount);
+        $this->assertSame(2, $handlerA->callCount);
     }
 
     #[Test]
-    public function suspendedPointerTransitionsToNextNodeOnSubsequentExecute(): void
+    public function suspendedPointerStaysOnSameNodeOnSubsequentExecute(): void
     {
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
         $container = $this->createMock(ContainerInterface::class);
@@ -291,11 +291,11 @@ class StateMachineTest extends TestCase
         $machine->execute($execution);
         $machine->execute($execution);
 
-        $this->assertTrue($nodeB->id()->equals($pointer->nodeId));
+        $this->assertTrue($nodeA->id()->equals($pointer->nodeId));
     }
 
     #[Test]
-    public function secondExecuteAfterSuspendedReturnsRunningWhenTransitionIsMade(): void
+    public function secondExecuteAfterSuspendedReturnsSuspendedWhenHandlerStillSuspends(): void
     {
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
         $container = $this->createMock(ContainerInterface::class);
@@ -317,7 +317,7 @@ class StateMachineTest extends TestCase
         $machine->execute($execution);
         $status = $machine->execute($execution);
 
-        $this->assertSame(ExecutionStatus::Running, $status);
+        $this->assertSame(ExecutionStatus::Suspended, $status);
     }
 
     #[Test]

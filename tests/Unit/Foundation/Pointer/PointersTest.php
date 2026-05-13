@@ -8,8 +8,10 @@ use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerCreatedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerForkedEvent;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerJoinedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerRemovedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerTransitionedEvent;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Join\CannotJoinPointerException;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Removal\CannotRemovePointerException;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Transition\CannotTransitionPointerException;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Identity\PointerId;
@@ -228,5 +230,118 @@ class PointersTest extends TestCase
         $pointers->transition($pointer->id, NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node24"));
 
         $this->assertTrue($policyCalled);
+    }
+
+    #[Test]
+    public function joinCombinesMultiplePointersIntoOne(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node25");
+        $pointer1 = $pointers->startAt($nodeId);
+        $pointer2 = $pointers->startAt($nodeId);
+        $pointers->releaseEvents();
+
+        $joinedPointer = $pointers->join([$pointer1->id, $pointer2->id]);
+
+        $this->assertCount(1, $pointers->pointers);
+        $this->assertArrayHasKey($joinedPointer->id->toString(), $pointers->pointers);
+    }
+
+    #[Test]
+    public function joinRemovesOriginalPointersFromCollection(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node26");
+        $pointer1 = $pointers->startAt($nodeId);
+        $pointer2 = $pointers->startAt($nodeId);
+
+        $pointers->join([$pointer1->id, $pointer2->id]);
+
+        $this->assertArrayNotHasKey($pointer1->id->toString(), $pointers->pointers);
+        $this->assertArrayNotHasKey($pointer2->id->toString(), $pointers->pointers);
+    }
+
+    #[Test]
+    public function joinCreatesPointerWithParentIds(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node27");
+        $pointer1 = $pointers->startAt($nodeId);
+        $pointer2 = $pointers->startAt($nodeId);
+
+        $joinedPointer = $pointers->join([$pointer1->id, $pointer2->id]);
+
+        $this->assertCount(2, $joinedPointer->parentIds);
+        $this->assertTrue($pointer1->id->equals($joinedPointer->parentIds[0]));
+        $this->assertTrue($pointer2->id->equals($joinedPointer->parentIds[1]));
+    }
+
+    #[Test]
+    public function joinThrowsCannotJoinPointerExceptionForEmptyArray(): void
+    {
+        $pointers = $this->makePointers();
+
+        $this->expectException(CannotJoinPointerException::class);
+
+        $pointers->join([]);
+    }
+
+    #[Test]
+    public function joinThrowsCannotJoinPointerExceptionForSinglePointer(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node28");
+        $pointer = $pointers->startAt($nodeId);
+
+        $this->expectException(CannotJoinPointerException::class);
+
+        $pointers->join([$pointer->id]);
+    }
+
+    #[Test]
+    public function joinThrowsCannotJoinPointerExceptionForNonexistentPointer(): void
+    {
+        $pointers = $this->makePointers();
+
+        $this->expectException(CannotJoinPointerException::class);
+
+        $pointers->join([PointerId::new(), PointerId::new()]);
+    }
+
+    #[Test]
+    public function joinThrowsCannotJoinPointerExceptionWhenPointersAreInDifferentNodes(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId1 = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node29");
+        $nodeId2 = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node30");
+        $pointer1 = $pointers->startAt($nodeId1);
+        $pointer2 = $pointers->startAt($nodeId2);
+
+        $this->expectException(CannotJoinPointerException::class);
+
+        $pointers->join([$pointer1->id, $pointer2->id]);
+    }
+
+    #[Test]
+    public function joinRecordsPointerJoinedEvent(): void
+    {
+        $pointers = $this->makePointers();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointerstest.node31");
+        $pointer1 = $pointers->startAt($nodeId);
+        $pointer2 = $pointers->startAt($nodeId);
+        $pointers->releaseEvents();
+
+        $joinedPointer = $pointers->join([$pointer1->id, $pointer2->id]);
+
+        $events = $pointers->getEvents();
+        $this->assertCount(3, $events);
+        $this->assertInstanceOf(PointerJoinedEvent::class, $events[0]);
+        $this->assertInstanceOf(PointerRemovedEvent::class, $events[1]);
+        $this->assertInstanceOf(PointerRemovedEvent::class, $events[2]);
+        /** @var PointerJoinedEvent $event */
+        $event = $events[0];
+        $this->assertTrue($joinedPointer->id->equals($event->pointerId));
+        $this->assertTrue($nodeId->equals($event->nodeId));
+        $this->assertCount(2, $event->parentIds);
     }
 }

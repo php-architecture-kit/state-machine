@@ -151,12 +151,12 @@ abstract class StateMachine
         $handlerResult = $handler->handle(
             new NodeHandlerContext($execution->id, $node, $pointer, $execution->states, $this->taskBus),
         );
-        $pointer->markNodeHandlingStatusCompleted();
 
         if ($handlerResult === NodeHandlerResult::Suspended) {
             return $handlerResult;
         }
 
+        $pointer->markNodeHandlingStatusCompleted();
         $this->transitionToNextNodes($pointer, $execution);
         return $handlerResult;
     }

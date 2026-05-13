@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\AwaitA
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\AwaitAllComponent;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllArrivalNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Component\Fork\ForkComponent;
+use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\Node\RaceConditionNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
@@ -31,6 +32,7 @@ class AwaitAllFeatureTest extends TestCase
                 PassthroughNodeHandler::class     => new PassthroughNodeHandler(),
                 AwaitAllArrivalNodeHandler::class => new AwaitAllArrivalNodeHandler(),
                 AwaitAllFeatureNodeHandler::class => new AwaitAllFeatureNodeHandler(),
+                RaceConditionNodeHandler::class   => new RaceConditionNodeHandler(),
                 default => throw new RuntimeException("Unexpected handler: $class"),
             };
         });

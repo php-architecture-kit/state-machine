@@ -34,11 +34,11 @@ class PointerTest extends TestCase
     }
 
     #[Test]
-    public function createSetsParentIdToNull(): void
+    public function createSetsParentIdsToEmptyArray(): void
     {
         $pointer = Pointer::create(ExecutionId::new(), NodeId::create("state-machine.unit.foundation.pointer.pointertest.node3"));
 
-        $this->assertNull($pointer->parentId);
+        $this->assertSame([], $pointer->parentIds);
     }
 
     #[Test]
@@ -71,7 +71,8 @@ class PointerTest extends TestCase
 
         $forked = $original->fork();
 
-        $this->assertTrue($original->id->equals($forked->parentId));
+        $this->assertCount(1, $forked->parentIds);
+        $this->assertTrue($original->id->equals($forked->parentIds[0]));
     }
 
     #[Test]

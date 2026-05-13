@@ -92,7 +92,7 @@ class AwaitAllComponentTest extends TestCase
     }
 
     #[Test]
-    public function transitionCountEqualsNBranchesTimeTwoPlusOne(): void
+    public function transitionCountEqualsNBranchesTimeTwoPlusThree(): void
     {
         $branches = ['a', 'b', 'c'];
         $component = AwaitAllComponent::create('test-component', $branches);
@@ -100,7 +100,8 @@ class AwaitAllComponentTest extends TestCase
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
 
-        $this->assertCount(count($branches) * 2 + 1, $transitions);
+        // n*2 (arrival nodes) + 1 (sync to race) + 2 (race condition branches)
+        $this->assertCount(count($branches) * 2 + 3, $transitions);
     }
 
     #[Test]

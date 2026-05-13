@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Pointer;
 use PhpArchitecture\DomainCore\AggregateRoot;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerCreatedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerForkedEvent;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerJoinedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerRemovedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Event\PointerTransitionedEvent;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Removal\CannotRemovePointerException;
@@ -15,6 +16,7 @@ use PhpArchitecture\Technical\Assert;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Creation\CannotForkPointerException;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Exception\Join\CannotJoinPointerException;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Identity\PointerId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerCreationPolicy;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Policy\PointerRemovalPolicy;
@@ -108,6 +110,43 @@ class Pointers extends AggregateRoot
         $this->recordEvent(new PointerForkedEvent($pointerId, $forkedPointer->id, $forkedPointer->nodeId));
 
         return $forkedPointer;
+    }
+
+    /**
+     * @param PointerId[] $pointerIds
+     */
+    public function join(array $pointerIds): Pointer
+    {
+        Assert::eachInstanceOf($pointerIds, PointerId::class);
+        if (empty($pointerIds) || count($pointerIds) === 1) {
+            throw new CannotJoinPointerException('At least two pointers must be provided for join.');
+        }
+
+        $nodeId = null;
+        foreach ($pointerIds as $pointerId) {
+            $pointer = $this->pointers[$pointerId->toString()] ?? null;
+            if (null === $pointer) {
+                throw new CannotJoinPointerException("Requested Pointer to join does not exists in pointers collection.");
+            }
+
+            if ($nodeId === null) {
+                $nodeId = $pointer->nodeId;
+            }
+
+            if (!$nodeId->equals($pointer->nodeId)) {
+                throw new CannotJoinPointerException('All pointers must be in the same node to join.');
+            }
+        }
+
+        $joinedPointer = Pointer::create($this->executionId, $nodeId, $pointerIds);
+        $this->pointers[$joinedPointer->id->toString()] = $joinedPointer;
+        $this->recordEvent(new PointerJoinedEvent($joinedPointer->id, $joinedPointer->nodeId, $pointerIds));
+
+        foreach ($pointerIds as $pointerId) {
+            $this->remove($pointerId);
+        }
+
+        return $joinedPointer;
     }
 
     public function transition(PointerId $pointerId, NodeId ...$output): void
