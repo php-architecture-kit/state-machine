@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation;
 
 use PhpArchitecture\StateMachine\Foundation\Config\Exception\NoTransitionStrategyException;
+use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddNodeDuringExecutionException;
+use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddTransitionDuringExecutionException;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\InvalidNodeHandlerException;
@@ -317,6 +319,88 @@ class StateMachineTest extends TestCase
 
         $this->assertSame(ExecutionStatus::Running, $status);
     }
+
+    #[Test]
+    public function addNodeThrowsCannotAddNodeDuringExecutionExceptionWhenExecutionIsRunning(): void
+    {
+        $container = $this->createMock(ContainerInterface::class);
+        $machine = $this->makeMachine($container);
+        $nodeA = $this->makeNode('state-machine.test.node-a', AddNodeDuringExecutionHandler::class);
+        $nodeToAdd = new ConcreteNode('state-machine.test.node-to-add', ContinuousOrSuspendedHandler::class);
+        $machine->addNodePublic($nodeA);
+
+        $handler = new AddNodeDuringExecutionHandler($machine, $nodeToAdd);
+        $container->method('get')->with(AddNodeDuringExecutionHandler::class)->willReturn($handler);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt($nodeA->id());
+
+        $this->expectException(CannotAddNodeDuringExecutionException::class);
+        $machine->execute($execution);
+    }
+
+    #[Test]
+    public function addTransitionThrowsCannotAddTransitionDuringExecutionExceptionWhenExecutionIsRunning(): void
+    {
+        $container = $this->createMock(ContainerInterface::class);
+        $machine = $this->makeMachine($container);
+        $nodeA = $this->makeNode('state-machine.test.node-a', AddTransitionDuringExecutionHandler::class);
+        $nodeB = $this->makeNode('state-machine.test.node-b', ContinuousOrSuspendedHandler::class);
+        $machine->addNodePublic($nodeA);
+        $machine->addNodePublic($nodeB);
+
+        $handler = new AddTransitionDuringExecutionHandler($machine, $nodeA->id(), $nodeB->id());
+        $container->method('get')->with(AddTransitionDuringExecutionHandler::class)->willReturn($handler);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt($nodeA->id());
+
+        $this->expectException(CannotAddTransitionDuringExecutionException::class);
+        $machine->execute($execution);
+    }
+
+    #[Test]
+    public function addNodeAllowedAfterExecutionCompletes(): void
+    {
+        $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturn($handler);
+
+        $machine = $this->makeMachine($container);
+        $nodeA = $this->makeNode('state-machine.test.node-a', ContinuousOrSuspendedHandler::class);
+        $nodeB = $this->makeNode('state-machine.test.node-b', ContinuousOrSuspendedHandler::class);
+        $machine->addNodePublic($nodeA);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt($nodeA->id());
+
+        $machine->execute($execution);
+
+        $this->expectNotToPerformAssertions();
+        $machine->addNodePublic($nodeB);
+    }
+
+    #[Test]
+    public function addTransitionAllowedAfterExecutionCompletes(): void
+    {
+        $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturn($handler);
+
+        $machine = $this->makeMachine($container);
+        $nodeA = $this->makeNode('state-machine.test.node-a', ContinuousOrSuspendedHandler::class);
+        $nodeB = $this->makeNode('state-machine.test.node-b', ContinuousOrSuspendedHandler::class);
+        $machine->addNodePublic($nodeA);
+        $machine->addNodePublic($nodeB);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt($nodeA->id());
+
+        $machine->execute($execution);
+
+        $this->expectNotToPerformAssertions();
+        $machine->addTransition($nodeA->id(), $nodeB->id());
+    }
 }
 
 class ConcreteStateMachine extends StateMachine
@@ -372,5 +456,34 @@ class CountingHandler implements NodeHandlerInterface
         $this->callCount++;
 
         return $this->result;
+    }
+}
+
+class AddNodeDuringExecutionHandler implements NodeHandlerInterface
+{
+    public function __construct(
+        private readonly ConcreteStateMachine $machine,
+        private readonly ConcreteNode $nodeToAdd,
+    ) {}
+
+    public function handle(NodeHandlerContext $context): NodeHandlerResult
+    {
+        $this->machine->addNodePublic($this->nodeToAdd);
+        return NodeHandlerResult::Continue;
+    }
+}
+
+class AddTransitionDuringExecutionHandler implements NodeHandlerInterface
+{
+    public function __construct(
+        private readonly ConcreteStateMachine $machine,
+        private readonly NodeId $from,
+        private readonly NodeId $to,
+    ) {}
+
+    public function handle(NodeHandlerContext $context): NodeHandlerResult
+    {
+        $this->machine->addTransition($this->from, $this->to);
+        return NodeHandlerResult::Continue;
     }
 }

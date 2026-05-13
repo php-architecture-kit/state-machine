@@ -11,6 +11,8 @@ use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Config\Exception\NoTransitionStrategyException;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddNodeDuringExecutionException;
+use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddTransitionDuringExecutionException;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\InvalidNodeHandlerException;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\NodeNotFoundException;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
@@ -31,6 +33,7 @@ use Throwable;
 abstract class StateMachine
 {
     protected readonly Graph $graph;
+    protected bool $isAnyExecutionRunning = false;
 
     public function __construct(
         protected readonly ContainerInterface $container,
@@ -56,6 +59,10 @@ abstract class StateMachine
 
     protected function addNode(NodeInterface $node): static
     {
+        if ($this->isAnyExecutionRunning) {
+            throw new CannotAddNodeDuringExecutionException('Cannot add node during execution');
+        }
+
         $this->graph->vertexStore->addVertex($node);
 
         return $this;
@@ -63,6 +70,10 @@ abstract class StateMachine
 
     public function addTransition(NodeId $input, NodeId $output, ?TransitionCondition $condition = null): static
     {
+        if ($this->isAnyExecutionRunning) {
+            throw new CannotAddTransitionDuringExecutionException('Cannot add transition during execution');
+        }
+
         $this->graph->edgeStore->addEdge(Transition::create($input, $output, $condition));
 
         return $this;
@@ -72,6 +83,7 @@ abstract class StateMachine
     {
         $iterations = 0;
         $anyProgress = false;
+        $this->isAnyExecutionRunning = true;
         do {
             $plans = $this->config->pointersSelectionStrategy->select($execution->pointers);
             $madeProgress = false;
@@ -92,6 +104,7 @@ abstract class StateMachine
             $iterations++;
         } while ($madeProgress === true && ($maxIterations === null || $iterations < $maxIterations));
 
+        $this->isAnyExecutionRunning = false;
         if (empty($execution->pointers->pointers)) {
             return ExecutionStatus::Completed;
         }
