@@ -100,8 +100,8 @@ class AwaitAllComponentTest extends TestCase
 
         [, $transitions] = $component->getDefinedNodesAndTransitions();
 
-        // n*2 (arrival nodes) + 1 (sync to race) + 2 (race condition branches)
-        $this->assertCount(count($branches) * 2 + 3, $transitions);
+        // n*2 (arrival nodes) + 1 (sync to race) + 2 (race condition branches) + 2 (raceWinner => awaitWinner => done)
+        $this->assertCount(count($branches) * 2 + 5, $transitions);
     }
 
     #[Test]
