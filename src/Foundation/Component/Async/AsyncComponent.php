@@ -59,7 +59,7 @@ class AsyncComponent extends Definition
 
         $awaitComponent = AwaitStateComponent::create(
             $uniqueName,
-            State::TECHNICAL,
+            State::Technical,
             $createAsyncTaskNode->stateName(),
             $timeout,
             $clock,

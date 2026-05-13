@@ -24,7 +24,7 @@ use PhpArchitecture\Technical\Assert;
 
 class States extends AggregateRoot
 {
-    public const RESERVED_STATE_NAMES = [State::TECHNICAL];
+    public const RESERVED_STATE_NAMES = [State::Technical];
 
     /**
      * @param State[] $states
@@ -101,7 +101,7 @@ class States extends AggregateRoot
 
     public function getTechnicalState(): State
     {
-        $state = $this->getState(State::TECHNICAL);
+        $state = $this->getState(State::Technical);
         assert($state !== null, 'Technical state should always exist');
 
         return $state;

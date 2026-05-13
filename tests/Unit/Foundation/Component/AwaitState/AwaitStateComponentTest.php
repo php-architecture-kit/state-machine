@@ -236,7 +236,7 @@ class AwaitStateComponentTest extends TestCase
 
         $stateCount = count(array_filter(
             $states->states,
-            static fn($s) => $s->name === State::TECHNICAL,
+            static fn($s) => $s->name === State::Technical,
         ));
         $this->assertSame(1, $stateCount);
     }

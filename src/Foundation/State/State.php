@@ -17,7 +17,7 @@ use PhpArchitecture\Technical\Assert;
  */
 class State implements ArrayAccess
 {
-    public const TECHNICAL = '__technical';
+    public const Technical = '__technical';
 
     /**
      * @var array<string,StateDetail>
