@@ -11,6 +11,7 @@ use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
 use PhpArchitecture\StateMachine\Foundation\Config\Exception\NoTransitionStrategyException;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\DefinitionCompiler;
 use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddNodeDuringExecutionException;
 use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddTransitionDuringExecutionException;
 use PhpArchitecture\StateMachine\Foundation\Node\Exception\InvalidNodeHandlerException;
@@ -46,7 +47,7 @@ abstract class StateMachine
 
     public function addDefinition(Definition $definition): static
     {
-        [$nodes, $transitions] = $definition->getDefinedNodesAndTransitions();
+        [$nodes, $transitions] = (new DefinitionCompiler)->compile($definition);
         foreach ($nodes as $node) {
             $this->addNode($node);
         }

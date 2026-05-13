@@ -17,7 +17,7 @@ class AwaitStateNodeHandlerTest extends TestCase
     public function handleReturnsContinue(): void
     {
         $handler = new PassthroughNodeHandler();
-        $context = $this->createMock(NodeHandlerContext::class);
+        $context = $this->createStub(NodeHandlerContext::class);
 
         $result = $handler->handle($context);
 

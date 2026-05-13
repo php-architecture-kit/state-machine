@@ -10,15 +10,15 @@ use LogicException;
 
 final class Port extends Node
 {
-    public protected(set) ?NodeId $attachedNode = null;
+    public protected(set) NodeId|Port|null $attachedNode = null;
 
     public function handlerClass(): string
     {
         throw new LogicException('Port is a definition boundary node and cannot be handled as a state-machine node.');
     }
 
-    public function attach(NodeId $nodeId): void
+    public function attach(NodeId|Port $node): void
     {
-        $this->attachedNode = $nodeId;
+        $this->attachedNode = $node;
     }
 }

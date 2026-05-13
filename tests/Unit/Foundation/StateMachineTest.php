@@ -41,14 +41,14 @@ class StateMachineTest extends TestCase
     private function makeContainerWithHandler(string $handlerClass, NodeHandlerInterface $handler): ContainerInterface
     {
         $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->with($handlerClass)->willReturn($handler);
+        $container->expects($this->once())->method('get')->with($handlerClass)->willReturn($handler);
         return $container;
     }
 
     #[Test]
     public function executeReturnsCompletedWhenExecutionHasNoPointers(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
         $execution = Execution::create();
 
@@ -81,7 +81,7 @@ class StateMachineTest extends TestCase
         $continueHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
             static function (string $class) use ($continueHandler, $suspendHandler): NodeHandlerInterface {
                 return match ($class) {
@@ -110,7 +110,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function addTransitionAddsDirectedEdgeBetweenNodes(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
         $nodeA = $this->makeNode('state-machine.test.node-a', 'handler');
         $nodeB = $this->makeNode('state-machine.test.node-b', 'handler');
@@ -127,7 +127,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function addTransitionReturnsSameInstance(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
         $nodeA = $this->makeNode('state-machine.test.node-a', 'handler');
         $nodeB = $this->makeNode('state-machine.test.node-b', 'handler');
@@ -142,7 +142,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function addTransitionWithConditionStoresConditionOnEdge(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
         $nodeA = $this->makeNode('state-machine.test.node-a', 'handler');
         $nodeB = $this->makeNode('state-machine.test.node-b', 'handler');
@@ -164,7 +164,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function getNodeThrowsNodeNotFoundExceptionForUnknownNodeId(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
 
         $this->expectException(NodeNotFoundException::class);
@@ -175,7 +175,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function getOutgoingTransitionsReturnsOnlyEdgesFromGivenNode(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $machine = $this->makeMachine($container);
         $nodeA = $this->makeNode('state-machine.test.node-a', 'h');
         $nodeB = $this->makeNode('state-machine.test.node-b', 'h');
@@ -198,7 +198,7 @@ class StateMachineTest extends TestCase
     #[Test]
     public function executeThrowsInvalidNodeHandlerExceptionWhenContainerReturnsNonHandler(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn(new stdClass());
 
         $machine = $this->makeMachine($container);
@@ -217,7 +217,7 @@ class StateMachineTest extends TestCase
     public function executeReturnsCompletedWhenNodeHasNoOutgoingTransitions(): void
     {
         $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn($handler);
 
         $machine = $this->makeMachine($container);
@@ -238,7 +238,7 @@ class StateMachineTest extends TestCase
         $handlerA = new CountingHandler(NodeHandlerResult::Suspended);
         $handlerBC = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
 
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(
             static function (string $class) use ($handlerA, $handlerBC): NodeHandlerInterface {
                 return match ($class) {
@@ -272,7 +272,7 @@ class StateMachineTest extends TestCase
     public function suspendedPointerStaysOnSameNodeOnSubsequentExecute(): void
     {
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn($suspendHandler);
 
         $machine = $this->makeMachine($container);
@@ -298,7 +298,7 @@ class StateMachineTest extends TestCase
     public function secondExecuteAfterSuspendedReturnsSuspendedWhenHandlerStillSuspends(): void
     {
         $suspendHandler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Suspended);
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn($suspendHandler);
 
         $machine = $this->makeMachine($container);
@@ -330,7 +330,7 @@ class StateMachineTest extends TestCase
         $machine->addNodePublic($nodeA);
 
         $handler = new AddNodeDuringExecutionHandler($machine, $nodeToAdd);
-        $container->method('get')->with(AddNodeDuringExecutionHandler::class)->willReturn($handler);
+        $container->expects($this->once())->method('get')->with(AddNodeDuringExecutionHandler::class)->willReturn($handler);
 
         $execution = Execution::create();
         $execution->pointers->startAt($nodeA->id());
@@ -350,7 +350,7 @@ class StateMachineTest extends TestCase
         $machine->addNodePublic($nodeB);
 
         $handler = new AddTransitionDuringExecutionHandler($machine, $nodeA->id(), $nodeB->id());
-        $container->method('get')->with(AddTransitionDuringExecutionHandler::class)->willReturn($handler);
+        $container->expects($this->once())->method('get')->with(AddTransitionDuringExecutionHandler::class)->willReturn($handler);
 
         $execution = Execution::create();
         $execution->pointers->startAt($nodeA->id());
@@ -363,7 +363,7 @@ class StateMachineTest extends TestCase
     public function addNodeAllowedAfterExecutionCompletes(): void
     {
         $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn($handler);
 
         $machine = $this->makeMachine($container);
@@ -384,7 +384,7 @@ class StateMachineTest extends TestCase
     public function addTransitionAllowedAfterExecutionCompletes(): void
     {
         $handler = new ContinuousOrSuspendedHandler(NodeHandlerResult::Continue);
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturn($handler);
 
         $machine = $this->makeMachine($container);

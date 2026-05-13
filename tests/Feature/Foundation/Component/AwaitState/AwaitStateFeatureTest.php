@@ -34,7 +34,7 @@ class AwaitStateFeatureTest extends TestCase
 
     private function makeContainer(): ContainerInterface
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
                 PassthroughNodeHandler::class       => new PassthroughNodeHandler(),
@@ -138,7 +138,7 @@ class AwaitStateFeatureTest extends TestCase
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $afterTimeout = $start->add(new DateInterval('PT61S'));
 
-        $clock = $this->createMock(ClockInterface::class);
+        $clock = $this->createStub(ClockInterface::class);
         $call = 0;
         $clock->method('now')->willReturnCallback(
             function () use ($start, $afterTimeout, &$call): DateTimeImmutable {

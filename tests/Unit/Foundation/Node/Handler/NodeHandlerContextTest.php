@@ -41,7 +41,7 @@ class NodeHandlerContextTest extends TestCase
         $node = $this->makeNode('state-machine.test.node');
         $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
-        $bus = $this->createMock(TaskBusInterface::class);
+        $bus = $this->createStub(TaskBusInterface::class);
 
         $context = new NodeHandlerContext($executionId, $node, $pointer, $states, $bus);
 
@@ -59,7 +59,7 @@ class NodeHandlerContextTest extends TestCase
         $nodeB = $this->makeNode('state-machine.test.node-b');
         $pointer = Pointer::create($executionId, $nodeA->id());
         $states = States::create($executionId, null, null, null);
-        $bus = $this->createMock(TaskBusInterface::class);
+        $bus = $this->createStub(TaskBusInterface::class);
 
         $this->expectException(InvalidNodeException::class);
 
@@ -76,7 +76,7 @@ class NodeHandlerContextTest extends TestCase
         $task = new class implements Task {};
 
         $dispatchedStamps = [];
-        $bus = $this->createMock(TaskBusInterface::class);
+        $bus = $this->createStub(TaskBusInterface::class);
         $bus->method('dispatch')
             ->willReturnCallback(function (Task $t, array $stamps) use (&$dispatchedStamps, $task): TaskEnvelope {
                 $dispatchedStamps = $stamps;
@@ -107,7 +107,7 @@ class NodeHandlerContextTest extends TestCase
         $providedKey = new TaskKey($node->id(), $executionId, $pointer->id, $task::class);
 
         $dispatchedStamps = [];
-        $bus = $this->createMock(TaskBusInterface::class);
+        $bus = $this->createStub(TaskBusInterface::class);
         $bus->method('dispatch')
             ->willReturnCallback(function (Task $t, array $stamps) use (&$dispatchedStamps, $task, $providedKey): TaskEnvelope {
                 $dispatchedStamps = $stamps;
@@ -129,7 +129,7 @@ class NodeHandlerContextTest extends TestCase
         $node = $this->makeNode('state-machine.test.node');
         $pointer = Pointer::create($executionId, $node->id());
         $states = States::create($executionId, null, null, null);
-        $bus = $this->createMock(TaskBusInterface::class);
+        $bus = $this->createStub(TaskBusInterface::class);
         $task = new class implements Task {};
 
         $this->expectException(InvalidTaskStampException::class);

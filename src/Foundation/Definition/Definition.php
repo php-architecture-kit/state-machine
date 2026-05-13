@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Definition;
 
+use Deprecated;
 use PhpArchitecture\Graph\Graph;
 use PhpArchitecture\Graph\Index\IncidenceIndex;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -11,7 +12,6 @@ use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
-use PhpArchitecture\Technical\Assert;
 use LogicException;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
@@ -281,62 +281,14 @@ abstract class Definition extends Graph
         return $wrapper;
     }
 
-
-    /** 
-     * @return array{NodeInterface[],TransitionInterface[]} 
+    /**
+     * @return array{NodeInterface[],TransitionInterface[]}
      */
+    #[Deprecated("Use DefinitionCompiler directly instead.", "1.5.0")]
     public function getDefinedNodesAndTransitions(): array
     {
-        /** @var array<string,NodeInterface> $nodes */
-        $nodes = $this->vertexStore->getVertices();
-        Assert::eachInstanceOf($nodes, NodeInterface::class);
+        $compiler = new DefinitionCompiler();
 
-        /** @var array<string,TransitionInterface> $transitions */
-        $transitions = $this->edgeStore->getEdges();
-        Assert::eachInstanceOf($transitions, TransitionInterface::class);
-
-        /** @var ?IncidenceIndex $incidenceIndex */
-        $incidenceIndex = $this->indexRegistry->index(IncidenceIndex::class);
-        if (null === $incidenceIndex) {
-            $incidenceIndex = new IncidenceIndex();
-            array_map(static fn(TransitionInterface $transition) => $incidenceIndex->onEdgeAdded($transition), $transitions);
-        }
-
-        /** @var NodeInterface[] $definedNodes */
-        $definedNodes = [];
-        foreach ($nodes as $node) {
-            if (!$node instanceof Port) {
-                $definedNodes[] = $node;
-                continue;
-            }
-
-            /** @var string[] $nodeTransitions */
-            $nodeTransitions = array_keys($incidenceIndex->edgesFor($node->id));
-
-            // port without attached node must be omitted and it's transitions removed
-            if ($node->attachedNode === null) {
-                $transitions = array_filter($transitions, static fn(TransitionInterface $tr): bool => !in_array($tr->id()->toString(), $nodeTransitions, true));
-                continue;
-            }
-
-            // port id must be replaced with attached node id in each incidence transition
-            $nodeId = $node->attachedNode;
-            foreach ($nodeTransitions as $transitionId) {
-                // Skip if transition was already removed by another port
-                if (!isset($transitions[$transitionId])) {
-                    continue;
-                }
-                $transition = $transitions[$transitionId];
-                if ($transition->u()->equals($node->id())) {
-                    $transitions[$transitionId] = $transition->withInput($nodeId);
-                } elseif ($transition->v()->equals($node->id())) {
-                    $transitions[$transitionId] = $transition->withOutput($nodeId);
-                } else {
-                    throw new LogicException('Port node must be either source or target of transition');
-                }
-            }
-        }
-
-        return [$definedNodes, $transitions];
+        return $compiler->compile($this);
     }
 }

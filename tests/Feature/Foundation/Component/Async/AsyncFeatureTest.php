@@ -33,7 +33,7 @@ class AsyncFeatureTest extends TestCase
 
     private function makeTaskBus(): TaskBusInterface
     {
-        $taskBus = $this->createMock(TaskBusInterface::class);
+        $taskBus = $this->createStub(TaskBusInterface::class);
         $taskBus->method('dispatch')->willReturnCallback(function (Task $task, array $stamps): TaskEnvelope {
             $envelope = TaskEnvelope::create($task, $stamps);
             $this->lastEnvelope = $envelope;
@@ -45,7 +45,7 @@ class AsyncFeatureTest extends TestCase
 
     private function makeContainer(): ContainerInterface
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
                 CreateAsyncTaskNodeHandler::class => new CreateAsyncTaskNodeHandler(),
@@ -260,7 +260,7 @@ class TrackedAsyncFeatureTest extends TestCase
 
     private function makeTaskBus(): TaskBusInterface
     {
-        $taskBus = $this->createMock(TaskBusInterface::class);
+        $taskBus = $this->createStub(TaskBusInterface::class);
         $taskBus->method('dispatch')->willReturnCallback(function (Task $task, array $stamps): TaskEnvelope {
             $envelope = TaskEnvelope::create($task, $stamps);
             $this->lastEnvelope = $envelope;
@@ -273,7 +273,7 @@ class TrackedAsyncFeatureTest extends TestCase
     private function makeContainer(): ContainerInterface
     {
         $visitedNodes = &$this->visitedNodes;
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(function (string $class) use (&$visitedNodes): object {
             return match ($class) {
                 CreateAsyncTaskNodeHandler::class => new CreateAsyncTaskNodeHandler(),

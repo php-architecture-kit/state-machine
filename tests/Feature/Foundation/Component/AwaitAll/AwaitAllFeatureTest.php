@@ -26,7 +26,7 @@ class AwaitAllFeatureTest extends TestCase
 {
     private function makeContainer(): ContainerInterface
     {
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
                 PassthroughNodeHandler::class     => new PassthroughNodeHandler(),

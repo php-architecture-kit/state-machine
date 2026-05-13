@@ -31,7 +31,7 @@ class AwaitStateComponentTest extends TestCase
 
     private function makeClockAt(DateTimeImmutable $now): ClockInterface
     {
-        $clock = $this->createMock(ClockInterface::class);
+        $clock = $this->createStub(ClockInterface::class);
         $clock->method('now')->willReturn($now);
         return $clock;
     }
@@ -177,7 +177,7 @@ class AwaitStateComponentTest extends TestCase
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $afterTimeout = $start->add(new DateInterval('PT61S'));
 
-        $clock = $this->createMock(ClockInterface::class);
+        $clock = $this->createStub(ClockInterface::class);
         $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
 
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
@@ -196,7 +196,7 @@ class AwaitStateComponentTest extends TestCase
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
         $afterTimeout = $start->add(new DateInterval('PT61S'));
 
-        $clock = $this->createMock(ClockInterface::class);
+        $clock = $this->createStub(ClockInterface::class);
         $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
 
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
