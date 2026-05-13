@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\RaceFirst;
 
-use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\Node\RaceConditionNode;
 use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\Node\RaceFirstTerminalNode;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
@@ -34,7 +34,8 @@ class RaceFirstComponent extends Definition
     {
         $baseName = "state-machine.race-first.{$uniqueName}";
 
-        $raceConditionNode = new RaceConditionNode("{$baseName}.condition-check", [], new FirstValidTransitionStrategy());
+        $raceConditionNode = new PassthroughNode("{$baseName}.condition-check", [], new FirstValidTransitionStrategy());
+        $winnerStateName = $raceConditionNode->id->toString() . '.winner';
         $terminalNode = new RaceFirstTerminalNode("{$baseName}.terminal");
 
         $instance = self::newInstance(
@@ -50,17 +51,16 @@ class RaceFirstComponent extends Definition
             null,
         );
 
-        // raceConditionNode -> winner (if this pointer is the first winner)
+        // raceConditionNode -> winner (first pointer to arrive wins atomically)
         $instance->addTransition(
             $raceConditionNode,
             $instance->output->winner, // @phpstan-ignore-line
-            static function (States $states) use ($raceConditionNode): TransitionConditionDecision {
-                $state = $states->getTechnicalState();
-                $winnerState = $state[$raceConditionNode->stateName()] ?? null;
+            static function (States $states) use ($winnerStateName): TransitionConditionDecision {
+                $technicalState = $states->getTechnicalState();
 
-                // If no winner yet, this transition is available
-                // (actual winner recording happens in handler)
-                if ($winnerState === null) {
+                // If no winner yet, this pointer wins - atomically set and proceed
+                if (($technicalState[$winnerStateName] ?? null) === null) {
+                    $states->modifyState($technicalState->id, [$winnerStateName => true]);
                     return TransitionConditionDecision::Accepted;
                 }
 
@@ -68,16 +68,15 @@ class RaceFirstComponent extends Definition
             },
         );
 
-        // raceConditionNode -> terminal (if there's already a winner)
+        // raceConditionNode -> terminal (subsequent pointers are losers)
         $instance->addTransition(
             $raceConditionNode,
             $terminalNode,
-            static function (States $states) use ($raceConditionNode): TransitionConditionDecision {
-                $state = $states->getTechnicalState();
-                $winnerState = $state[$raceConditionNode->stateName()] ?? null;
+            static function (States $states) use ($winnerStateName): TransitionConditionDecision {
+                $technicalState = $states->getTechnicalState();
 
                 // If there's already a winner, this pointer is a loser -> terminal
-                if ($winnerState !== null) {
+                if (($technicalState[$winnerStateName] ?? null) !== null) {
                     return TransitionConditionDecision::Accepted;
                 }
 
