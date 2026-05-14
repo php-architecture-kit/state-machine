@@ -108,8 +108,15 @@ final class DefinitionCompiler
         $current = $port->attachedNode;
         $visited = [];
 
-        while ($current instanceof Port) {
-            $currentId = $current->id()->toString();
+        while (true) {
+            if ($current instanceof Port) {
+                $currentId = $current->id()->toString();
+            } elseif ($current instanceof NodeId && isset($this->portMap[$current->toString()])) {
+                $currentId = $current->toString();
+                $current = $this->portMap[$currentId];
+            } else {
+                break;
+            }
 
             if (isset($visited[$currentId])) {
                 throw new LogicException('Circular port attachment detected');
@@ -125,7 +132,7 @@ final class DefinitionCompiler
                 ));
             }
 
-            $current = $current->attachedNode;
+            $current = $this->portMap[$currentId]->attachedNode;
         }
 
         return $current;

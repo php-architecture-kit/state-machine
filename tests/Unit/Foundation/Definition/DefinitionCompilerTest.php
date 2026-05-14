@@ -341,6 +341,107 @@ class DefinitionCompilerTest extends TestCase
     }
 
     #[Test]
+    public function compileResolvesNestedPortAttachmentViaNodeId(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $targetNode = $this->makeNode('state-machine.definition.target');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($targetNode);
+
+        $outerPort = new Port('state-machine.definition.port.outer');
+        $innerPort = new Port('state-machine.definition.port.inner');
+
+        $innerPort->attach($targetNode->id());
+        $outerPort->attach($innerPort->id());
+
+        $definition->addNodePublic($outerPort);
+        $definition->addNodePublic($innerPort);
+
+        $definition->addTransitionPublic($nodeA->id(), $outerPort->id());
+
+        [, $transitions] = $this->compiler->compile($definition);
+
+        $this->assertCount(1, $transitions);
+        $transition = array_values($transitions)[0];
+        $this->assertTrue($nodeA->id()->equals($transition->u()));
+        $this->assertTrue($targetNode->id()->equals($transition->v()));
+    }
+
+    #[Test]
+    public function compileResolvesDeeplyNestedPortAttachmentViaNodeId(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $targetNode = $this->makeNode('state-machine.definition.target');
+        $definition->addNodePublic($nodeA);
+        $definition->addNodePublic($targetNode);
+
+        $port1 = new Port('state-machine.definition.port.1');
+        $port2 = new Port('state-machine.definition.port.2');
+        $port3 = new Port('state-machine.definition.port.3');
+
+        $port3->attach($targetNode->id());
+        $port2->attach($port3->id());
+        $port1->attach($port2->id());
+
+        $definition->addNodePublic($port1);
+        $definition->addNodePublic($port2);
+        $definition->addNodePublic($port3);
+
+        $definition->addTransitionPublic($nodeA->id(), $port1->id());
+
+        [, $transitions] = $this->compiler->compile($definition);
+
+        $this->assertCount(1, $transitions);
+        $transition = array_values($transitions)[0];
+        $this->assertTrue($targetNode->id()->equals($transition->v()));
+    }
+
+    #[Test]
+    public function compileRemovesTransitionWhenPortAttachedViaNodeIdToUnattachedPort(): void
+    {
+        $definition = $this->makeDefinition();
+        $nodeA = $this->makeNode('state-machine.definition.node-a');
+        $definition->addNodePublic($nodeA);
+
+        $outerPort = new Port('state-machine.definition.port.outer');
+        $innerPort = new Port('state-machine.definition.port.inner');
+
+        $outerPort->attach($innerPort->id());
+        // innerPort remains unattached (attachedNode is null)
+
+        $definition->addNodePublic($outerPort);
+        $definition->addNodePublic($innerPort);
+
+        $definition->addTransitionPublic($nodeA->id(), $outerPort->id());
+
+        [, $transitions] = $this->compiler->compile($definition);
+
+        $this->assertEmpty($transitions);
+    }
+
+    #[Test]
+    public function compileThrowsOnCircularPortAttachmentViaNodeId(): void
+    {
+        $definition = $this->makeDefinition();
+
+        $portA = new Port('state-machine.definition.port.a');
+        $portB = new Port('state-machine.definition.port.b');
+
+        $portA->attach($portB->id());
+        $portB->attach($portA->id());
+
+        $definition->addNodePublic($portA);
+        $definition->addNodePublic($portB);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Circular port attachment detected');
+
+        $this->compiler->compile($definition);
+    }
+
+    #[Test]
     public function compileThrowsOnCircularPortAttachment(): void
     {
         $definition = $this->makeDefinition();
