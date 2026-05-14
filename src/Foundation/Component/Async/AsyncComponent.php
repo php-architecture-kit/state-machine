@@ -53,7 +53,7 @@ class AsyncComponent extends Definition
         $createAsyncTaskNode = new CreateAsyncTaskNode("{$baseName}.dispatch", $taskFactory);
         $instance->addNode($createAsyncTaskNode);
         $instance->addTransition($instance->input->trigger->id(), $createAsyncTaskNode->id(), null);
-        
+
         $executedTaskNode = new AsyncTaskExecutedNode("{$baseName}.executed", [], new FirstValidTransitionStrategy());
         $instance->addNode($executedTaskNode);
 
@@ -79,7 +79,7 @@ class AsyncComponent extends Definition
         $instance->addTransition(
             $awaitComponent->output->run->id(),
             $instance->output->success->id(),
-            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()] === AsyncTaskResult::Success
+            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()]?->value === AsyncTaskResult::Success->value
                 ? TransitionConditionDecision::Accepted
                 : TransitionConditionDecision::Rejected,
         );
@@ -87,7 +87,7 @@ class AsyncComponent extends Definition
         $instance->addTransition(
             $awaitComponent->output->run->id(),
             $instance->output->fail->id(),
-            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()] === AsyncTaskResult::Fail
+            static fn(States $states): TransitionConditionDecision => $states->getTechnicalState()[$createAsyncTaskNode->stateName()]?->value === AsyncTaskResult::Fail->value
                 ? TransitionConditionDecision::Accepted
                 : TransitionConditionDecision::Rejected,
         );
