@@ -6,10 +6,13 @@ namespace PhpArchitecture\StateMachine\Foundation\Definition;
 
 use PhpArchitecture\Graph\Graph;
 use PhpArchitecture\Graph\Vertex\VertexInterface;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\CircularPortAttachmentException;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\DanglingPortAttachmentException;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\OrphanNodeException;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\UnresolvedPortException;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
-use LogicException;
 
 /**
  * Compiles a Definition into a flat list of nodes and transitions ready to be
@@ -57,7 +60,51 @@ final class DefinitionCompiler
         /** @var TransitionInterface[] $transitions */
         $transitions = array_values($workingGraph->edgeStore->getEdges());
 
+        $this->assertNoPortsRemain($nodes);
+        $this->assertNoOrphanNodes($nodes, $transitions);
+
         return [$nodes, $transitions];
+    }
+
+    /**
+     * @param NodeInterface[] $nodes
+     */
+    private function assertNoPortsRemain(array $nodes): void
+    {
+        $remainingPortIds = [];
+        foreach ($nodes as $node) {
+            if ($node instanceof Port) {
+                $remainingPortIds[] = $node->id()->toString();
+            }
+        }
+
+        if (!empty($remainingPortIds)) {
+            throw UnresolvedPortException::forPorts($remainingPortIds);
+        }
+    }
+
+    /**
+     * @param NodeInterface[] $nodes
+     * @param TransitionInterface[] $transitions
+     */
+    private function assertNoOrphanNodes(array $nodes, array $transitions): void
+    {
+        $connectedNodeIds = [];
+        foreach ($transitions as $transition) {
+            $connectedNodeIds[$transition->u()->toString()] = true;
+            $connectedNodeIds[$transition->v()->toString()] = true;
+        }
+
+        $orphanIds = [];
+        foreach ($nodes as $node) {
+            if (!isset($connectedNodeIds[$node->id()->toString()])) {
+                $orphanIds[] = $node->id()->toString();
+            }
+        }
+
+        if (!empty($orphanIds)) {
+            throw OrphanNodeException::forNodes($orphanIds);
+        }
     }
 
     private function buildWorkingGraph(Definition $definition): Graph
@@ -128,19 +175,15 @@ final class DefinitionCompiler
             }
 
             if (isset($visited[$currentId])) {
-                throw new LogicException(sprintf(
-                    'Circular port attachment detected involving port "%s".',
-                    $currentId,
-                ));
+                throw CircularPortAttachmentException::involving($currentId);
             }
             $visited[$currentId] = true;
 
             if (!isset($this->portMap[$currentId])) {
-                throw new LogicException(sprintf(
-                    'Port "%s" is attached to port "%s" which is not in the definition.',
+                throw DanglingPortAttachmentException::for(
                     $port->id()->toString(),
                     $currentId,
-                ));
+                );
             }
 
             $current = $this->portMap[$currentId]->attachedNode;

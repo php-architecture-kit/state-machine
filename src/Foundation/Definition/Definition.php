@@ -11,8 +11,8 @@ use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\DuplicatePortNameException;
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
-use LogicException;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
@@ -218,20 +218,14 @@ abstract class Definition extends Graph
         $freeSecondInputNames = array_keys(array_filter((array) $second->input, static fn(Port $p): bool => $p->attachedNode === null));
         $duplicateInputs = array_intersect($freeFirstInputNames, $freeSecondInputNames);
         if (!empty($duplicateInputs)) {
-            throw new LogicException(sprintf(
-                'Cannot merge definitions: duplicate input port names found: %s',
-                implode(', ', $duplicateInputs),
-            ));
+            throw DuplicatePortNameException::forInputs($duplicateInputs);
         }
 
         $freeFirstOutputNames = array_keys(array_filter((array) $first->output, static fn(Port $p): bool => $p->attachedNode === null));
         $freeSecondOutputNames = array_keys(array_filter((array) $second->output, static fn(Port $p): bool => $p->attachedNode === null));
         $duplicateOutputs = array_intersect($freeFirstOutputNames, $freeSecondOutputNames);
         if (!empty($duplicateOutputs)) {
-            throw new LogicException(sprintf(
-                'Cannot merge definitions: duplicate output port names found: %s',
-                implode(', ', $duplicateOutputs),
-            ));
+            throw DuplicatePortNameException::forOutputs($duplicateOutputs);
         }
 
         // step 4: create wrapper with same port names and embed connected definition

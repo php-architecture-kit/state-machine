@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Definition;
 
 use PhpArchitecture\Graph\Graph;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\OrphanNodeException;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Definition\SubGraphDefinition;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
@@ -38,6 +39,7 @@ class DefinitionTest extends TestCase
         $nodeB = $this->makeNode('state-machine.definition.node-b');
         $definition->addNodePublic($nodeA);
         $definition->addNodePublic($nodeB);
+        $definition->addTransitionPublic($nodeA->id(), $nodeB->id());
 
         [$nodes] = $definition->getDefinedNodesAndTransitions();
 
@@ -49,11 +51,14 @@ class DefinitionTest extends TestCase
     {
         $definition = $this->makeDefinition();
         $regularNode = $this->makeNode('state-machine.definition.regular');
+        $externalNode = $this->makeNode('state-machine.definition.external');
         $definition->addNodePublic($regularNode);
 
         $port = new Port('state-machine.definition.port.input');
-        $port->attach($regularNode->id());
+        $port->attach($externalNode->id());
         $definition->addNodePublic($port);
+
+        $definition->addTransitionPublic($port->id(), $regularNode->id());
 
         [$nodes] = $definition->getDefinedNodesAndTransitions();
 
@@ -63,7 +68,7 @@ class DefinitionTest extends TestCase
     }
 
     #[Test]
-    public function portWithoutAttachedNodeRemovesItsTransitions(): void
+    public function portWithoutAttachedNodeRemovesItsTransitionsAndLeavesOrphans(): void
     {
         $definition = $this->makeDefinition();
         $nodeA = $this->makeNode('state-machine.definition.node-a');
@@ -77,9 +82,9 @@ class DefinitionTest extends TestCase
         $definition->addTransitionPublic($nodeA->id(), $port->id());
         $definition->addTransitionPublic($port->id(), $nodeB->id());
 
-        [, $transitions] = $definition->getDefinedNodesAndTransitions();
+        $this->expectException(OrphanNodeException::class);
 
-        $this->assertEmpty($transitions);
+        $definition->getDefinedNodesAndTransitions();
     }
 
     #[Test]
@@ -427,63 +432,88 @@ class DefinitionTest extends TestCase
     #[Test]
     public function embedWithSingleStringPortMappingCreatesOnePassthroughNode(): void
     {
-        // Test backward compatibility - single string mapping
         $embedder = ConcreteDefinition::withPorts('test.embedder', ['input'], []);
         $embedded = ConcreteDefinition::withPorts('test.embedded', [], ['output']);
 
-        // Add a node to embedded definition so it's not empty
         $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
         $embedded->addNodePublic($embeddedNode);
         $embedded->output->output->attach($embeddedNode->id());
+        $embedded->addTransitionPublic($embeddedNode->id(), $embedded->output->output->id());
 
-        // Embed with single string mapping (backward compatibility)
+        $externalNode = new ConcreteDefinitionNode('test.embedder.external');
+        $embedder->addNodePublic($externalNode);
+        $embedder->input->input->attach($externalNode->id());
+        $embedder->addTransitionPublic($embedder->input->input->id(), $externalNode->id());
+
         $embedder->embed($embedded, ['output' => 'input'], []);
 
         [$nodes] = $embedder->getDefinedNodesAndTransitions();
 
-        // Should have: 1 passthrough node + 1 embedded node
-        $this->assertCount(2, $nodes);
+        $passthroughCount = count(array_filter(
+            $nodes,
+            static fn($node): bool => $node instanceof \PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode,
+        ));
+        $this->assertSame(1, $passthroughCount);
     }
 
     #[Test]
     public function embedWithArrayPortMappingCreatesMultiplePassthroughNodes(): void
     {
-        // Test new feature - array of strings mapping
         $embedder = ConcreteDefinition::withPorts('test.embedder', ['input1', 'input2'], []);
         $embedded = ConcreteDefinition::withPorts('test.embedded', [], ['output']);
 
-        // Add a node to embedded definition
         $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
         $embedded->addNodePublic($embeddedNode);
         $embedded->output->output->attach($embeddedNode->id());
+        $embedded->addTransitionPublic($embeddedNode->id(), $embedded->output->output->id());
 
-        // Embed with array mapping - one embedded output to multiple embedder inputs
+        $external1 = new ConcreteDefinitionNode('test.embedder.external-1');
+        $external2 = new ConcreteDefinitionNode('test.embedder.external-2');
+        $embedder->addNodePublic($external1);
+        $embedder->addNodePublic($external2);
+        $embedder->input->input1->attach($external1->id());
+        $embedder->input->input2->attach($external2->id());
+        $embedder->addTransitionPublic($embedder->input->input1->id(), $external1->id());
+        $embedder->addTransitionPublic($embedder->input->input2->id(), $external2->id());
+
         $embedder->embed($embedded, ['output' => ['input1', 'input2']], []);
 
         [$nodes] = $embedder->getDefinedNodesAndTransitions();
 
-        // Should have: 2 passthrough nodes + 1 embedded node
-        $this->assertCount(3, $nodes);
+        $passthroughCount = count(array_filter(
+            $nodes,
+            static fn($node): bool => $node instanceof \PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode,
+        ));
+        $this->assertSame(2, $passthroughCount);
     }
 
     #[Test]
     public function embedOutputMappingWithArrayCreatesMultiplePassthroughNodes(): void
     {
-        // Test output port mapping with array
         $embedder = ConcreteDefinition::withPorts('test.embedder', [], ['output']);
         $embedded = ConcreteDefinition::withPorts('test.embedded', ['input1', 'input2'], []);
 
-        // Add a node to embedded definition
         $embeddedNode = new ConcreteDefinitionNode('test.embedded.node');
         $embedded->addNodePublic($embeddedNode);
+        $embedded->input->input1->attach($embeddedNode->id());
+        $embedded->input->input2->attach($embeddedNode->id());
+        $embedded->addTransitionPublic($embedded->input->input1->id(), $embeddedNode->id());
+        $embedded->addTransitionPublic($embedded->input->input2->id(), $embeddedNode->id());
 
-        // Embed with array output mapping - one embedder output to multiple embedded inputs
+        $externalNode = new ConcreteDefinitionNode('test.embedder.external');
+        $embedder->addNodePublic($externalNode);
+        $embedder->output->output->attach($externalNode->id());
+        $embedder->addTransitionPublic($externalNode->id(), $embedder->output->output->id());
+
         $embedder->embed($embedded, [], ['output' => ['input1', 'input2']]);
 
         [$nodes] = $embedder->getDefinedNodesAndTransitions();
 
-        // Should have: 2 passthrough nodes + 1 embedded node
-        $this->assertCount(3, $nodes);
+        $passthroughCount = count(array_filter(
+            $nodes,
+            static fn($node): bool => $node instanceof \PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode,
+        ));
+        $this->assertSame(2, $passthroughCount);
     }
 }
 

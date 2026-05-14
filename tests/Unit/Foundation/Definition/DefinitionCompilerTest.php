@@ -6,6 +6,8 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Definition;
 
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Definition\DefinitionCompiler;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\CircularPortAttachmentException;
+use PhpArchitecture\StateMachine\Foundation\Definition\Exception\OrphanNodeException;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
