@@ -45,7 +45,7 @@ final class TaskEnvelope
                 throw new DuplicateTaskKeyStampException("Task can have only one key stamp during creation. {$given} given.");
             }
 
-            $key = $keyStamps[0];
+            $key = array_values($keyStamps)[0];
             assert($key instanceof TaskKey);
             $instance->key = $key;
         }
