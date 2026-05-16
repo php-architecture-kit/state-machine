@@ -9,7 +9,7 @@ use PhpArchitecture\StateMachine\Foundation\Task\Attribute\HandledBy;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskBusInterface;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskEnvelope;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskStamp;
-use PhpArchitecture\StateMachine\Foundation\Execution\Execution; // Added Execution import
+use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Defferred\MissingDeferredTaskBusException;
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Handler\HandlerNotFoundException;
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Handler\InvalidHandlerException;
@@ -24,12 +24,13 @@ class ImmediateTaskBus implements TaskBusInterface
     public function __construct(
         private readonly ContainerInterface $container,
         private readonly ?DeferredTaskBus $deferredTaskBus = null,
+        private readonly ?Execution $execution = null,
     ) {}
 
     /**
      * @param TaskStamp[] $stamps
      */
-    public function dispatch(Task $task, array $stamps = [], ?Execution $execution = null): TaskEnvelope // Updated signature
+    public function dispatch(Task $task, array $stamps = []): TaskEnvelope
     {
         $envelope = TaskEnvelope::create($task, $stamps);
 
@@ -43,7 +44,7 @@ class ImmediateTaskBus implements TaskBusInterface
 
         // Handle immediately
         $handler = $this->resolveHandler($task);
-        $handler->handle($envelope, $execution); // Updated call site
+        $handler->handle($envelope, $this->execution);
 
         return $envelope;
     }

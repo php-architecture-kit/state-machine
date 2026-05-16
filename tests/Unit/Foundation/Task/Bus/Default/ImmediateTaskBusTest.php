@@ -13,6 +13,7 @@ use PhpArchitecture\StateMachine\Foundation\Task\Exception\Defferred\MissingDefe
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Handler\HandlerNotFoundException;
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Handler\InvalidHandlerException;
 use PhpArchitecture\StateMachine\Foundation\Task\Exception\Handler\MissingHandledByAttributeException;
+use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Task\Handler\TaskHandlerInterface;
 use PhpArchitecture\StateMachine\Foundation\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
@@ -45,7 +46,7 @@ class ImmediateTaskBusTest extends TestCase
         $handled = false;
         $handler = new class($handled) implements TaskHandlerInterface {
             public function __construct(private bool &$handled) {}
-            public function handle(TaskEnvelope $envelope): void { $this->handled = true; }
+            public function handle(TaskEnvelope $envelope, ?Execution $execution = null): void { $this->handled = true; }
         };
 
         $container = $this->makeContainer([TestHandler::class => $handler]);
@@ -61,7 +62,7 @@ class ImmediateTaskBusTest extends TestCase
     public function returnsEnvelopeAfterHandling(): void
     {
         $handler = new class implements TaskHandlerInterface {
-            public function handle(TaskEnvelope $envelope): void {}
+            public function handle(TaskEnvelope $envelope, ?Execution $execution = null): void {}
         };
 
         $container = $this->makeContainer([TestHandler::class => $handler]);
@@ -148,16 +149,16 @@ class ImmediateTaskBusTest extends TestCase
 // Test helper classes
 class TestHandler implements TaskHandlerInterface
 {
-    public function handle(TaskEnvelope $envelope): void {}
+    public function handle(TaskEnvelope $envelope, ?Execution $execution = null): void {}
 }
 
 class NonExistentHandler implements TaskHandlerInterface
 {
-    public function handle(TaskEnvelope $envelope): void {}
+    public function handle(TaskEnvelope $envelope, ?Execution $execution = null): void {}
 }
 
 class CapturingHandler implements TaskHandlerInterface
 {
     public ?TaskEnvelope $captured = null;
-    public function handle(TaskEnvelope $envelope): void { $this->captured = $envelope; }
+    public function handle(TaskEnvelope $envelope, ?Execution $execution = null): void { $this->captured = $envelope; }
 }
