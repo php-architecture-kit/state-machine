@@ -43,6 +43,21 @@ class Pointer
         );
     }
 
+    /**
+     * @param PointerId[] $parentIds
+     */
+    public static function recreate(
+        ExecutionId $executionId,
+        PointerId $id,
+        array $parentIds,
+        NodeId $nodeId,
+        int $currentStep,
+        NodeHandlingStatus $handlingStatus,
+    ): static {
+        /** @phpstan-ignore-next-line */
+        return new static($executionId, $id, $parentIds, $nodeId, $currentStep, $handlingStatus);
+    }
+
     public function fork(): Pointer
     {
         return new Pointer(

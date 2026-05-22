@@ -30,11 +30,11 @@
         "php-architecture-kit/graph": ">=1.0.1",
         "php-architecture-kit/domain-core": "^1.0",
         "php-architecture-kit/uuid": "^1.1",
-        "php-architecture-kit/technical": "^1.0"
+        "php-architecture-kit/technical": "^1.0",
+        "symfony/yaml": "^8.0"
     },
     "require-dev": {
-        "jawira/plantuml-encoding": "^1.1",
-        "symfony/yaml": "^8.0"
+        "jawira/plantuml-encoding": "^1.1"
     },
     "autoload": {
         "psr-4": {

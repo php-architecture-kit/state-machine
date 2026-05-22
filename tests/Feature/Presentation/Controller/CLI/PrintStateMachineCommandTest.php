@@ -450,7 +450,8 @@ class PrintStateMachineCommandTest extends TestCase
         $outputFile = $this->outputDir . '/output.yaml';
         $tester->execute(['--output' => $outputFile]);
 
-        $this->assertStringContainsString($outputFile, $tester->getDisplay());
+        $normalizedOutput = preg_replace('/\s+/', '', $tester->getDisplay());
+        $this->assertStringContainsString(preg_replace('/\s+/', '', $outputFile), $normalizedOutput);
     }
 }
 

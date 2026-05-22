@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Pointer;
 
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
+use PhpArchitecture\StateMachine\Foundation\Pointer\Identity\PointerId;
 use PhpArchitecture\StateMachine\Foundation\Pointer\NodeHandlingStatus;
 use PhpArchitecture\StateMachine\Foundation\Pointer\Pointer;
 use PHPUnit\Framework\Attributes\Test;
@@ -160,5 +161,38 @@ class PointerTest extends TestCase
         $forked = $pointer->fork();
 
         $this->assertSame(NodeHandlingStatus::Pending, $forked->handlingStatus);
+    }
+
+    #[Test]
+    public function recreateRestoresAllFields(): void
+    {
+        $executionId = ExecutionId::new();
+        $id = PointerId::new();
+        $parentId = PointerId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointertest.recreate.node1");
+        $currentStep = 5;
+        $handlingStatus = NodeHandlingStatus::Completed;
+
+        $pointer = Pointer::recreate($executionId, $id, [$parentId], $nodeId, $currentStep, $handlingStatus);
+
+        $this->assertTrue($executionId->equals($pointer->executionId));
+        $this->assertTrue($id->equals($pointer->id));
+        $this->assertCount(1, $pointer->parentIds);
+        $this->assertTrue($parentId->equals($pointer->parentIds[0]));
+        $this->assertTrue($nodeId->equals($pointer->nodeId));
+        $this->assertSame($currentStep, $pointer->currentStep);
+        $this->assertSame($handlingStatus, $pointer->handlingStatus);
+    }
+
+    #[Test]
+    public function recreateWithEmptyParentIds(): void
+    {
+        $executionId = ExecutionId::new();
+        $id = PointerId::new();
+        $nodeId = NodeId::create("state-machine.unit.foundation.pointer.pointertest.recreate.node2");
+
+        $pointer = Pointer::recreate($executionId, $id, [], $nodeId, 0, NodeHandlingStatus::Pending);
+
+        $this->assertSame([], $pointer->parentIds);
     }
 }
