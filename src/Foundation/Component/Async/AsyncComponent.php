@@ -10,6 +10,7 @@ use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\AsyncTaskResult
 use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\CreateAsyncTaskNode;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Task\Task;
@@ -19,6 +20,18 @@ use Psr\Clock\ClockInterface;
 
 class AsyncComponent extends Definition
 {
+    /** @var Port input */
+    public protected(set) Port $trigger;
+
+    /** @var Port output */
+    public protected(set) Port $success;
+
+    /** @var Port output */
+    public protected(set) Port $fail;
+
+    /** @var Port output */
+    public protected(set) Port $expired;
+
     /**
      * Creates an async component that dispatches a Task and waits for its completion.
      *

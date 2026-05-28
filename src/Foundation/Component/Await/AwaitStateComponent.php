@@ -8,6 +8,7 @@ use DateInterval;
 use DateTimeZone;
 use PhpArchitecture\Clock\LocalizedClock;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Definition\SingleNodeDefinition;
 use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
@@ -17,6 +18,15 @@ use Psr\Clock\ClockInterface;
 
 class AwaitStateComponent extends Definition
 {
+    /** @var Port input */
+    public protected(set) Port $at;
+
+    /** @var Port output */
+    public protected(set) Port $run;
+
+    /** @var Port output */
+    public protected(set) Port $expired;
+
     public static function create(
         string $uniqueName,
         string $stateName,

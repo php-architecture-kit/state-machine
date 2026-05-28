@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\Fork;
 
-use LogicException;
 use PhpArchitecture\StateMachine\Foundation\Component\Fork\Node\ForkNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
@@ -15,6 +15,9 @@ use PhpArchitecture\Technical\Assert;
 
 class ForkComponent extends Definition
 {
+    /** @var Port input */
+    public protected(set) Port $trigger;
+
     /**
      * Creates a fork (AND-split) component that spawns one pointer per matching output branch.
      *

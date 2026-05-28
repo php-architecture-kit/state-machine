@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Component\RaceFirst;
 use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\Node\RaceFirstTerminalNode;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\FirstValidTransitionStrategy;
@@ -24,6 +25,12 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\FirstVal
  */
 class RaceFirstComponent extends Definition
 {
+    /** @var Port input */
+    public protected(set) Port $gateway;
+
+    /** @var Port output */
+    public protected(set) Port $winner;
+
     /**
      * Creates a race-first component where the first pointer to arrive wins
      * and continues to the output, while all subsequent pointers are terminated.

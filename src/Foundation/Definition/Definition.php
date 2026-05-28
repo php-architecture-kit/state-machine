@@ -18,6 +18,7 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\Transiti
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionConditionCallback;
 use stdClass;
+use Throwable;
 
 abstract class Definition extends Graph
 {
@@ -59,6 +60,26 @@ abstract class Definition extends Graph
             foreach ((array) $portCollection as $port) {
                 /** @var Port $port */
                 $instance->addNode($port);
+
+                if (property_exists($instance, $port->name())) {
+                    if (isset($instance->{$port->name()})) {
+                        throw new LogicException(sprintf(
+                            'Port name "%s" conflicts with existing property on %s. Please choose a different port name or rename the property.',
+                            $port->name(),
+                            static::class,
+                        ));
+                    }
+
+                    try {
+                        $instance->{$port->name()} = $port;
+                    } catch (Throwable) {
+                        throw new LogicException(sprintf(
+                            'Port name "%s" conflicts with existing property on %s. Please choose a different port name or rename the property.',
+                            $port->name(),
+                            static::class,
+                        ));
+                    }
+                }
             }
         }
 

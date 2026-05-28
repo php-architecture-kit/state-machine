@@ -8,12 +8,16 @@ use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllArri
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllSyncNode;
 use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\RaceFirstComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 
 class AwaitAllComponent extends Definition
 {
+    /** @var Port output */
+    public protected(set) Port $done;
+
     /**
      * Creates an AND-join component that waits for ALL declared input branches to arrive
      * before passing control to the single `done` output.

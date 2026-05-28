@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Component\Choice;
 
 use PhpArchitecture\StateMachine\Foundation\Component\Choice\Node\ChoiceNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
+use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondition;
@@ -14,6 +15,9 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\TransitionSelect
 
 class ChoiceComponent extends Definition
 {
+    /** @var Port input */
+    public protected(set) Port $trigger;
+
     /**
      * Creates a choice (XOR-gateway) component that routes to the first matching output branch.
      *
