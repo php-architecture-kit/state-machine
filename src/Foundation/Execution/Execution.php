@@ -55,4 +55,12 @@ class Execution
             $states,
         );
     }
+
+    public function releaseEvents(): array
+    {
+        $pointerEvents = $this->pointers->releaseEvents();
+        $stateEvents = $this->states->releaseEvents();
+
+        return array_merge($pointerEvents, $stateEvents);
+    }
 }

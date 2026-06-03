@@ -29,6 +29,7 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondi
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Output\TransitionSelectionOutput;
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 
 abstract class StateMachine
@@ -41,6 +42,7 @@ abstract class StateMachine
         ?Graph $graph = null,
         protected readonly StateMachineConfig $config = new StateMachineConfig(),
         protected readonly TaskBusInterface $taskBus = new DeferredTaskBus(),
+        protected readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
         $this->graph = $graph ?? new Graph($this->config->toGraphConfig());
     }
@@ -122,6 +124,13 @@ abstract class StateMachine
 
             $stepBeforeHandling = $pointer->currentStep;
             $result = $this->handlePointerOnNode($pointer, $execution);
+
+            if ($this->eventDispatcher !== null) {
+                $events = $execution->releaseEvents();
+                foreach ($events as $event) {
+                    $this->eventDispatcher->dispatch($event);
+                }
+            }
 
             if ($pointer->currentStep === $stepBeforeHandling) {
                 break;
