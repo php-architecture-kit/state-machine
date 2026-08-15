@@ -43,7 +43,7 @@
     },
     "conflict": {
         "php-architecture-kit/graph": "<1.0.1",
-        "php-architecture-kit/uuid": "<1.1"
+        "php-architecture-kit/uuid": "<1.1 || >=2.0"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
