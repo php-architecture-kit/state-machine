@@ -7,7 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Node\Identity;
 use InvalidArgumentException;
 use LogicException;
 use PhpArchitecture\Graph\Vertex\Identity\VertexId;
-use PhpArchitecture\Uuid\Uuid;
+use PhpArchitecture\Uuid\Foundation\Uuid;
 
 class NodeId extends VertexId
 {

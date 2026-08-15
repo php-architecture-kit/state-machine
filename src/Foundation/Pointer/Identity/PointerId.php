@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Pointer\Identity;
 
-use PhpArchitecture\Uuid\Uuid;
+use PhpArchitecture\Uuid\Foundation\Uuid;
 
 class PointerId extends Uuid {}
