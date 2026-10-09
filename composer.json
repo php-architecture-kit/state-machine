@@ -34,12 +34,36 @@
     },
     "require-dev": {
         "jawira/plantuml-encoding": "^1.1",
-        "symfony/yaml": "^8.0"
+        "symfony/yaml": "^8.0",
+        "friendsofphp/php-cs-fixer": "*",
+        "phpstan/phpstan": "*",
+        "phpunit/phpunit": "*",
+        "symfony/console": "^7.4 || ^8.0",
+        "symfony/uid": "*"
+    },
+    "suggest": {
+        "symfony/console": "Required for the state-machine:print CLI command (PrintStateMachineCommand)"
     },
     "autoload": {
         "psr-4": {
             "PhpArchitecture\\StateMachine\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpArchitecture\\StateMachine\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "code:fix": "vendor/bin/php-cs-fixer --config=tools/php-cs-fixer/php-cs-fixer.php fix",
+        "code:fix:dry": "vendor/bin/php-cs-fixer --config=tools/php-cs-fixer/php-cs-fixer.php check --diff",
+        "code:analyse": "vendor/bin/phpstan analyse src -c tools/phpstan/phpstan.neon",
+        "code:analyse:b": "vendor/bin/phpstan analyse src -c tools/phpstan/phpstan.neon --generate-baseline tools/phpstan/baseline.neon --allow-empty-baseline",
+        "test": "vendor/bin/phpunit --configuration tools/phpunit/phpunit.xml --do-not-record-test-run-history",
+        "test:coverage": [
+            "@putenv XDEBUG_MODE=coverage",
+            "@test --log-junit var/coverage/phpunit-report.xml --coverage-cobertura var/coverage/phpunit-coverage.xml --coverage-html var/coverage/html"
+        ]
     },
     "conflict": {
         "php-architecture-kit/graph": "<1.1",
