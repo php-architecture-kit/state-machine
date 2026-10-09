@@ -96,23 +96,32 @@ abstract class Definition extends Graph
      */
     protected function addTransition(NodeId|NodeInterface $input, NodeId|NodeInterface $output, null|callable|TransitionCondition $condition = null): static
     {
-        foreach (['input', 'output'] as $node) {
-            if (${$node} instanceof NodeInterface) {
-                if (!$this->vertexStore->hasVertex(${$node}->id())) { // @phpstan-ignore-line
-                    $this->addNode(${$node}); // @phpstan-ignore-line
-                }
-
-                ${$node} = ${$node}->id; // @phpstan-ignore-line
-            }
-        }
+        $input = $this->ensureNode($input);
+        $output = $this->ensureNode($output);
 
         if (is_callable($condition)) {
             $condition = TransitionConditionCallback::define($condition);
         }
 
-        $this->edgeStore->addEdge(Transition::create($input, $output, $condition)); // @phpstan-ignore-line
+        $this->edgeStore->addEdge(Transition::create($input, $output, $condition));
 
         return $this;
+    }
+
+    /**
+     * Adds the node to the definition if it is not there yet, and returns its id.
+     */
+    private function ensureNode(NodeId|NodeInterface $node): NodeId
+    {
+        if (!$node instanceof NodeInterface) {
+            return $node;
+        }
+
+        if (!$this->vertexStore->hasVertex($node->id())) {
+            $this->addNode($node);
+        }
+
+        return $node->id();
     }
 
     /**
