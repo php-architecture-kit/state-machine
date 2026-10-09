@@ -38,7 +38,7 @@ class ChoiceComponent extends Definition
         );
 
         $instance->addTransition(
-            $instance->input->trigger, // @phpstan-ignore-line
+            $instance->input->trigger,
             $choiceNode,
             null,
         );
@@ -46,7 +46,7 @@ class ChoiceComponent extends Definition
         foreach ($branches as $outputName => $predicate) {
             $instance->addTransition(
                 $choiceNode,
-                $instance->output->{$outputName}, // @phpstan-ignore-line
+                $instance->output->{$outputName},
                 $predicate,
             );
         }

@@ -48,7 +48,7 @@ class AwaitAllComponent extends Definition
             );
 
             $instance->addTransition(
-                $instance->input->{$branch}, // @phpstan-ignore-line
+                $instance->input->{$branch},
                 $arrivalNode,
                 null,
             );
@@ -82,7 +82,7 @@ class AwaitAllComponent extends Definition
 
         $instance->addTransition(
             $syncNode,
-            $joinNode, // @phpstan-ignore-line
+            $joinNode,
             static function (States $states) use ($arrivalStates): TransitionConditionDecision {
                 $state = $states->getTechnicalState();
 

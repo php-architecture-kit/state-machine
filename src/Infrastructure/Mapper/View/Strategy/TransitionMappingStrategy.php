@@ -68,7 +68,7 @@ class TransitionMappingStrategy implements StateMachineViewMappingStrategy
 
         return [
             'file' => $this->toRelativePath($rf->getFileName() ?: ''),
-            'line' => $rf->getStartLine(),
+            'line' => $rf->getStartLine() ?: 0,
         ];
     }
 

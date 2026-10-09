@@ -22,18 +22,16 @@ use Throwable;
 
 abstract class Definition extends Graph
 {
-    /**
-     * @var stdClass<string,Port>
-     * @phpstan-var stdClass<string,Port>
-     */
+    /** @var stdClass port name => Port */
     public readonly object $input;
 
-    /**
-     * @var stdClass<string,Port>
-     * @phpstan-var stdClass<string,Port>
-     */
+    /** @var stdClass port name => Port */
     public readonly object $output;
 
+    /**
+     * @param stdClass $input
+     * @param stdClass $output
+     */
     protected function __construct(
         public readonly string $name,
         object $input,
@@ -155,7 +153,9 @@ abstract class Definition extends Graph
         }
 
         // add embedded definition nodes and transitions
-        foreach ((array) $embeddedDefinition->vertexStore->getVertices() as $node) {
+        /** @var NodeInterface[] $embeddedNodes */
+        $embeddedNodes = (array) $embeddedDefinition->vertexStore->getVertices();
+        foreach ($embeddedNodes as $node) {
             $this->addNode($node);
         }
 
@@ -196,7 +196,7 @@ abstract class Definition extends Graph
                     continue;
                 }
 
-                $nodeId = $port->attachedNode;
+                $nodeId = $port->attachedNode instanceof Port ? $port->attachedNode->id() : $port->attachedNode;
                 foreach ($incidenceIndex->edgesFor($port->id) as $transition) {
                     /** @var TransitionInterface $transition */
                     if ($transition->u()->equals($port->id())) {
@@ -271,10 +271,12 @@ abstract class Definition extends Graph
 
         foreach ($emptyInputPorts as $portName => $connectedPort) {
             $wrapperPort = $wrapper->input->{$portName};
+            /** @var TransitionInterface[] $connectedTransitions */
+            $connectedTransitions = $wrapperIncidenceIndex->edgesFor($connectedPort->id);
 
             $updatedTransitions = array_map(
                 static fn(TransitionInterface $transition): TransitionInterface => $transition->withInput($wrapperPort->id),
-                $wrapperIncidenceIndex->edgesFor($connectedPort->id),
+                $connectedTransitions,
             );
 
             $wrapper->vertexStore->removeVertex($connectedPort->id);
@@ -286,10 +288,12 @@ abstract class Definition extends Graph
 
         foreach ($emptyOutputPorts as $portName => $connectedPort) {
             $wrapperPort = $wrapper->output->{$portName};
+            /** @var TransitionInterface[] $connectedTransitions */
+            $connectedTransitions = $wrapperIncidenceIndex->edgesFor($connectedPort->id);
 
             $updatedTransitions = array_map(
                 static fn(TransitionInterface $transition): TransitionInterface => $transition->withOutput($wrapperPort->id),
-                $wrapperIncidenceIndex->edgesFor($connectedPort->id),
+                $connectedTransitions,
             );
 
             $wrapper->vertexStore->removeVertex($connectedPort->id);

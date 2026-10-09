@@ -40,7 +40,7 @@ class ForkComponent extends Definition
         );
 
         $instance->addTransition(
-            $instance->input->trigger, // @phpstan-ignore-line
+            $instance->input->trigger,
             $forkNode,
             null,
         );
@@ -48,7 +48,7 @@ class ForkComponent extends Definition
         foreach ($branches as $branch) {
             $instance->addTransition(
                 $forkNode,
-                $instance->output->{$branch}, // @phpstan-ignore-line
+                $instance->output->{$branch},
                 $conditions[$branch] ?? null,
             );
         }

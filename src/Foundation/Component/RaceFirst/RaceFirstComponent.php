@@ -53,7 +53,7 @@ class RaceFirstComponent extends Definition
 
         // gateway -> raceConditionNode (unconditional)
         $instance->addTransition(
-            $instance->input->gateway, // @phpstan-ignore-line
+            $instance->input->gateway,
             $raceConditionNode,
             null,
         );
@@ -61,7 +61,7 @@ class RaceFirstComponent extends Definition
         // raceConditionNode -> winner (first pointer to arrive wins atomically)
         $instance->addTransition(
             $raceConditionNode,
-            $instance->output->winner, // @phpstan-ignore-line
+            $instance->output->winner,
             static function (States $states) use ($winnerStateName): TransitionConditionDecision {
                 $technicalState = $states->getTechnicalState();
 
