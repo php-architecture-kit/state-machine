@@ -51,11 +51,9 @@ class StateMachineMappingStrategy implements StateMachineViewMappingStrategy
         foreach ($graph->vertexStore->getVertices() as $vertex) {
             if ($vertex instanceof NodeInterface) {
                 $view = $this->nodeStrategy->mapToView($vertex);
-                assert($view instanceof NodeView);
                 $nodes[] = $view;
             } elseif ($vertex instanceof VertexInterface) {
                 $view = $this->vertexStrategy->mapToView($vertex);
-                assert($view instanceof VertexView);
                 $unknownVertices[] = $view;
             }
         }
@@ -63,11 +61,9 @@ class StateMachineMappingStrategy implements StateMachineViewMappingStrategy
         foreach ($graph->edgeStore->getEdges() as $edge) {
             if ($edge instanceof TransitionInterface) {
                 $view = $this->transitionStrategy->mapToView($edge);
-                assert($view instanceof TransitionView);
                 $transitions[] = $view;
             } elseif ($edge instanceof EdgeInterface) {
                 $view = $this->edgeStrategy->mapToView($edge);
-                assert($view instanceof EdgeView);
                 $unknownEdges[] = $view;
             }
         }

@@ -157,7 +157,9 @@ final class DefinitionCompiler
      */
     private function rewriteEdges(Graph $graph): void
     {
-        foreach ($graph->edgeStore->getEdges() as $edge) {
+        /** @var TransitionInterface[] $edges */
+        $edges = $graph->edgeStore->getEdges();
+        foreach ($edges as $edge) {
             $rewritten = $this->resolveEdgeEndpoints($edge);
 
             if ($rewritten === null || $rewritten === $edge) {

@@ -124,7 +124,7 @@ class States extends AggregateRoot
     }
 
     /**
-     * @param StateDetail[]|array<string,mixed> $detailsToSet
+     * @param array<int,StateDetail>|array<string,mixed> $detailsToSet
      * @param string[] $detailsToRemove
      * @throws StateModificationException
      */
@@ -150,7 +150,7 @@ class States extends AggregateRoot
 
         foreach ($detailsToSet as $key => $detailToAdd) {
             if (!$detailToAdd instanceof StateDetail) {
-                $detailToAdd = new StateDetail($key, $detailToAdd);
+                $detailToAdd = new StateDetail((string) $key, $detailToAdd);
             }
 
             $existingDetail = $details[$detailToAdd->name] ?? null;
