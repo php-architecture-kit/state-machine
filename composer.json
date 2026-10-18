@@ -69,6 +69,11 @@
         "php-architecture-kit/graph": "<1.1",
         "php-architecture-kit/uuid": "<2.0"
     },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.8.x-dev"
+        }
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }
