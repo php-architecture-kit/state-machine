@@ -29,12 +29,16 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\TransitionCondi
 use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Output\TransitionSelectionOutput;
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use Psr\Container\ContainerInterface;
+use ReflectionClass;
 use Throwable;
 
 abstract class StateMachine
 {
     protected readonly Graph $graph;
     protected bool $isAnyExecutionRunning = false;
+
+    /** @var array<string,NodeHandlerInterface> built-in handlers created because the container lacks them */
+    private array $builtInHandlers = [];
 
     public function __construct(
         protected readonly ContainerInterface $container,
@@ -136,7 +140,7 @@ abstract class StateMachine
     protected function handlePointerOnNode(Pointer $pointer, Execution $execution): NodeHandlerResult
     {
         $node = $this->getNode($pointer->nodeId);
-        $handler = $this->container->get($node->handlerClass());
+        $handler = $this->resolveHandler($node->handlerClass());
 
         if (!$handler instanceof NodeHandlerInterface) {
             throw new InvalidNodeHandlerException(
@@ -160,6 +164,30 @@ abstract class StateMachine
         $pointer->markNodeHandlingStatusCompleted();
         $this->transitionToNextNodes($pointer, $execution);
         return $handlerResult;
+    }
+
+    /**
+     * Handlers come from the container. Handlers of the package's own nodes and components
+     * have no dependencies, so when the container does not provide them they are created directly.
+     */
+    private function resolveHandler(string $handlerClass): mixed
+    {
+        if (isset($this->builtInHandlers[$handlerClass])) {
+            return $this->builtInHandlers[$handlerClass];
+        }
+
+        if (
+            !$this->container->has($handlerClass)
+            && str_starts_with($handlerClass, __NAMESPACE__ . '\\')
+            && is_subclass_of($handlerClass, NodeHandlerInterface::class)
+        ) {
+            $class = new ReflectionClass($handlerClass);
+            if ($class->isInstantiable() && ($class->getConstructor()?->getNumberOfRequiredParameters() ?? 0) === 0) {
+                return $this->builtInHandlers[$handlerClass] = $class->newInstance();
+            }
+        }
+
+        return $this->container->get($handlerClass);
     }
 
     protected function transitionToNextNodes(Pointer $pointer, Execution $execution): TransitionSelectionOutput

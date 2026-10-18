@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\Component\Await;
 use DateInterval;
 use DateTimeZone;
 use PhpArchitecture\Clock\LocalizedClock;
+use PhpArchitecture\StateMachine\Foundation\Component\Await\Node\AwaitStateNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
 use PhpArchitecture\StateMachine\Foundation\Definition\SingleNodeDefinition;
@@ -34,9 +35,13 @@ class AwaitStateComponent extends Definition
         ?int $timeout = null,
         ?ClockInterface $clock = null
     ): Definition {
-        $node = new PassthroughNode("state-machine.await.{$uniqueName}.{$stateName}");
-        $nodeId = $node->id;
         $clock ??= new LocalizedClock(new DateTimeZone('UTC'));
+        $nodeName = "state-machine.await.{$uniqueName}.{$stateName}";
+        // without a timeout there is nothing to issue per visit, so no dedicated handler is needed
+        $node = $timeout === null
+            ? new PassthroughNode($nodeName)
+            : new AwaitStateNode($nodeName, $timeout, $clock);
+        $nodeId = $node->id;
 
         $instance = SingleNodeDefinition::create(
             $node,
@@ -75,6 +80,10 @@ class AwaitStateComponent extends Definition
         return $instance;
     }
 
+    /**
+     * Fallback for pointers that entered the node before AwaitStateNodeHandler issued
+     * expiration per visit (e.g. an Execution persisted by an older version).
+     */
     private static function createExpirationState(States $states, NodeId $nodeId, ?int $timeout, ClockInterface $clock): void
     {
         if ($timeout === null) {

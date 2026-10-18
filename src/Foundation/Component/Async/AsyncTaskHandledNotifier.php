@@ -15,36 +15,49 @@ use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskEnvelope;
  * Notifies the state machine that an async task has completed.
  *
  * Sets the result in Technical state's details, where the key is extracted
- * from AwaitStateStamp in the task envelope.
+ * from AwaitStateStamp in the task envelope. Results of tasks dispatched by an
+ * earlier visit of the same node are ignored.
  */
 final readonly class AsyncTaskHandledNotifier
 {
-    public static function success(Execution $execution, TaskEnvelope $envelope): void
+    public static function success(Execution $execution, TaskEnvelope $envelope): bool
     {
-        self::notify($execution, $envelope, AsyncTaskResult::Success);
+        return self::notify($execution, $envelope, AsyncTaskResult::Success);
     }
 
-    public static function fail(Execution $execution, TaskEnvelope $envelope): void
+    public static function fail(Execution $execution, TaskEnvelope $envelope): bool
     {
-        self::notify($execution, $envelope, AsyncTaskResult::Fail);
+        return self::notify($execution, $envelope, AsyncTaskResult::Fail);
     }
 
+    /**
+     * @return bool false when the result belongs to a task dispatched by an earlier visit
+     *              (e.g. a late or duplicated delivery after a cycle) and was ignored
+     */
     public static function notify(
         Execution $execution,
         TaskEnvelope $envelope,
         AsyncTaskResult $result,
-    ): void {
-        $key = self::extractKey($envelope);
+    ): bool {
+        $stamp = self::extractStamp($envelope);
         $technicalState = $execution->states->getTechnicalState();
+
+        // stamps serialized before 1.7.2 have no visit token (the property is not even initialized)
+        $visitToken = $stamp->visitToken ?? null;
+        if ($visitToken !== null && $technicalState[$stamp->visitStateName()]?->value !== $visitToken) {
+            return false;
+        }
 
         $execution->states->modifyState(
             $technicalState->id,
-            [new StateDetail($key, $result->value)],
+            [new StateDetail($stamp->stateName, $result->value)],
             [],
         );
+
+        return true;
     }
 
-    private static function extractKey(TaskEnvelope $envelope): string
+    private static function extractStamp(TaskEnvelope $envelope): AwaitStateStamp
     {
         $stamps = $envelope->getStamps(
             static fn($stamp): bool => $stamp instanceof AwaitStateStamp,
@@ -55,8 +68,8 @@ final readonly class AsyncTaskHandledNotifier
         }
 
         /** @var AwaitStateStamp $stamp */
-        $stamp = $stamps[0];
+        $stamp = array_values($stamps)[0];
 
-        return $stamp->stateName;
+        return $stamp;
     }
 }

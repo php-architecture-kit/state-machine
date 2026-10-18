@@ -11,6 +11,7 @@ use PhpArchitecture\StateMachine\Foundation\Component\Async\Node\CreateAsyncTask
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Definition\Port;
+use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Task\Task;
@@ -78,8 +79,13 @@ class AsyncComponent extends Definition
             $clock,
         );
 
+        // an unattached port is a dead end for the compiler - the expired output needs a node too
+        $expiredTaskNode = new PassthroughNode("{$baseName}.timed-out");
+        $instance->addNode($expiredTaskNode);
+
         $awaitComponent->input->at->attach($createAsyncTaskNode->id);
         $awaitComponent->output->run->attach($executedTaskNode->id);
+        $awaitComponent->output->expired->attach($expiredTaskNode->id);
 
         $instance->embed($awaitComponent, [], []);
 
