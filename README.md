@@ -184,8 +184,9 @@ $component->output->done->attach($nextNode->id);         // component -> next no
 $machine->addDefinition($component);
 ```
 
-Some components use their own node handlers (`AwaitStateNodeHandler`, `CreateAsyncTaskNodeHandler`,
-`AwaitAllArrivalNodeHandler`, `PassthroughNodeHandler`) - make them resolvable from your container.
+Components use the package's own node handlers (`PassthroughNodeHandler`, `AwaitStateNodeHandler`,
+`CreateAsyncTaskNodeHandler`, `AwaitAllArrivalNodeHandler`). They have no dependencies: when your
+container does not provide them, the machine creates them itself.
 
 ### AwaitStateComponent
 

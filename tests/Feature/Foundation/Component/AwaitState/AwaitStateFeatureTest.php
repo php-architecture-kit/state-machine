@@ -8,7 +8,6 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
-use PhpArchitecture\StateMachine\Foundation\Component\Await\Node\AwaitStateNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
@@ -39,7 +38,6 @@ class AwaitStateFeatureTest extends TestCase
         $container->method('get')->willReturnCallback(static function (string $class): object {
             return match ($class) {
                 PassthroughNodeHandler::class       => new PassthroughNodeHandler(),
-                AwaitStateNodeHandler::class        => new AwaitStateNodeHandler(),
                 AwaitStateFeatureNodeHandler::class => new AwaitStateFeatureNodeHandler(),
                 default => throw new RuntimeException("Unexpected handler: $class"),
             };
