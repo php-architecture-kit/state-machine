@@ -42,7 +42,9 @@ final readonly class AsyncTaskHandledNotifier
         $stamp = self::extractStamp($envelope);
         $technicalState = $execution->states->getTechnicalState();
 
-        if ($stamp->visitToken !== null && $technicalState[$stamp->visitStateName()]?->value !== $stamp->visitToken) {
+        // stamps serialized before 1.7.2 have no visit token (the property is not even initialized)
+        $visitToken = $stamp->visitToken ?? null;
+        if ($visitToken !== null && $technicalState[$stamp->visitStateName()]?->value !== $visitToken) {
             return false;
         }
 

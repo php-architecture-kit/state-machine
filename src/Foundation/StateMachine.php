@@ -37,6 +37,9 @@ abstract class StateMachine
     protected readonly Graph $graph;
     protected bool $isAnyExecutionRunning = false;
 
+    /** @var array<string,NodeHandlerInterface> built-in handlers created because the container lacks them */
+    private array $builtInHandlers = [];
+
     public function __construct(
         protected readonly ContainerInterface $container,
         ?Graph $graph = null,
@@ -167,8 +170,12 @@ abstract class StateMachine
      * Handlers come from the container. Handlers of the package's own nodes and components
      * have no dependencies, so when the container does not provide them they are created directly.
      */
-    protected function resolveHandler(string $handlerClass): mixed
+    private function resolveHandler(string $handlerClass): mixed
     {
+        if (isset($this->builtInHandlers[$handlerClass])) {
+            return $this->builtInHandlers[$handlerClass];
+        }
+
         if (
             !$this->container->has($handlerClass)
             && str_starts_with($handlerClass, __NAMESPACE__ . '\\')
@@ -176,7 +183,7 @@ abstract class StateMachine
         ) {
             $class = new ReflectionClass($handlerClass);
             if ($class->isInstantiable() && ($class->getConstructor()?->getNumberOfRequiredParameters() ?? 0) === 0) {
-                return $class->newInstance();
+                return $this->builtInHandlers[$handlerClass] = $class->newInstance();
             }
         }
 

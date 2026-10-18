@@ -15,6 +15,7 @@ use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
 use PhpArchitecture\StateMachine\Foundation\Task\Attribute\HandledBy;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Default\DeferredTaskBus;
+use PhpArchitecture\StateMachine\Foundation\Task\Bus\Stamp\AwaitStateStamp;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Default\ImmediateTaskBus;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskBusInterface;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\TaskEnvelope;
@@ -128,6 +129,32 @@ class CycleSafetyFeatureTest extends TestCase
         $this->assertSame('cycle-safety.async.ask-to-fix', $machine->lastVisited());
 
         $execution->states->defineState('user_fixed', ['yes' => true]);
+        $machine->execute($execution);
+        $this->assertSame('cycle-safety.async.ok', $machine->lastVisited());
+    }
+
+    #[Test]
+    public function acceptsResultsOfTasksSerializedBeforeVisitTokensExisted(): void
+    {
+        $bus = new DeferredTaskBus();
+        $machine = new AsyncRetryMachine(new CycleSafetyContainer(), $bus);
+        $execution = Execution::create();
+        $execution->pointers->startAt($machine->start->id);
+        $machine->execute($execution);
+
+        // the envelope travelled through a queue as serialized by 1.7.1: its stamp has only "stateName"
+        $envelope = $this->lastEnvelope($bus);
+        $stamp = array_values(array_filter($envelope->stamps, static fn (object $stamp): bool => $stamp instanceof AwaitStateStamp))[0];
+        $legacyStamp = unserialize(sprintf(
+            'O:%d:"%s":1:{s:9:"stateName";s:%d:"%s";}',
+            strlen(AwaitStateStamp::class),
+            AwaitStateStamp::class,
+            strlen($stamp->stateName),
+            $stamp->stateName,
+        ));
+        $legacyEnvelope = TaskEnvelope::create($envelope->task, [$legacyStamp]);
+
+        $this->assertTrue(AsyncTaskHandledNotifier::success($execution, $legacyEnvelope));
         $machine->execute($execution);
         $this->assertSame('cycle-safety.async.ok', $machine->lastVisited());
     }
