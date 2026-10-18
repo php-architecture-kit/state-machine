@@ -25,12 +25,12 @@ composer require php-architecture-kit/state-machine
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Node\Node;
-use PhpArchitecture\StateMachine\Foundation\Node\Identity\NodeId;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerInterface;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerContext;
 use PhpArchitecture\StateMachine\Foundation\Node\Handler\NodeHandlerResult;
+use Psr\Container\ContainerInterface;
 
-// 1. Define a node
+// 1. Define a node - its globally unique name ({vendor}.{module}.{purpose}) is also its identity
 final class SendEmailNode extends Node
 {
     public function handlerClass(): string
@@ -39,7 +39,7 @@ final class SendEmailNode extends Node
     }
 }
 
-// 2. Implement the handler
+// 2. Implement the handler (resolved from the PSR-11 container)
 final class SendEmailHandler implements NodeHandlerInterface
 {
     public function handle(NodeHandlerContext $context): NodeHandlerResult
@@ -52,23 +52,25 @@ final class SendEmailHandler implements NodeHandlerInterface
 // 3. Define the workflow
 final class OrderWorkflow extends StateMachine
 {
+    public readonly SendEmailNode $send;
+
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
 
-        $send   = new SendEmailNode();
-        $notify = new NotifyAdminNode();
+        $this->send = new SendEmailNode('acme.orders.send-email');
+        $notify     = new NotifyAdminNode('acme.orders.notify-admin');
 
-        $this->addNode($send)
+        $this->addNode($this->send)
              ->addNode($notify)
-             ->addTransition($send->id, $notify->id);
+             ->addTransition($this->send->id, $notify->id);
     }
 }
 
 // 4. Run
 $machine   = new OrderWorkflow($container);
 $execution = Execution::create();
-$execution->pointers->startAt($sendNodeId);
+$execution->pointers->startAt($machine->send->id);
 
 $status = $machine->execute($execution);
 // ExecutionStatus::Completed | ::Running | ::Suspended
@@ -120,12 +122,12 @@ Directed edge between two `NodeId`s. Optionally attach a guard condition:
 ```php
 $this->addTransition($from->id, $to->id);
 
-// with a condition closure
-$this->addTransition($from->id, $to->id, function (States $states): TransitionConditionDecision {
-    return $states->getState('order') !== null
+// with a condition (any TransitionCondition; TransitionConditionCallback wraps a closure)
+$this->addTransition($from->id, $to->id, TransitionConditionCallback::define(
+    fn(States $states): TransitionConditionDecision => $states->getState('order') !== null
         ? TransitionConditionDecision::Accepted
-        : TransitionConditionDecision::Wait;
-});
+        : TransitionConditionDecision::Wait,
+));
 ```
 
 ### Execution
@@ -172,102 +174,119 @@ new StateMachineConfig(
 
 ## Built-in Components
 
-Components are reusable, pre-wired sub-graphs. Add them with `$machine->addDefinition($component)` and connect their ports with `addTransition()`.
+Components are reusable, pre-wired sub-graphs (`Definition`) with named input and output ports.
+Connect the ports to your nodes with `attach()` **before** adding the component with
+`$machine->addDefinition($component)` - the compiler replaces every port with the node attached to it.
+
+```php
+$component->input->trigger->attach($previousNode->id);   // previous node -> component
+$component->output->done->attach($nextNode->id);         // component -> next node
+$machine->addDefinition($component);
+```
+
+Some components use their own node handlers (`AwaitStateNodeHandler`, `CreateAsyncTaskNodeHandler`,
+`AwaitAllArrivalNodeHandler`, `PassthroughNodeHandler`) - make them resolvable from your container.
 
 ### AwaitStateComponent
 
-Suspends the pointer until a named state appears in `States`, with an optional timeout.
+Waits until a named state (optionally with a given detail) appears in `States`, with an optional timeout.
+Ports: input `at`, outputs `run` and `expired`. The timeout window starts on every visit, so the
+component can be re-entered through a cycle.
 
 ```php
-$await = AwaitStateComponent::create('payment_result', detailName: 'status', timeout: 60);
+$await = AwaitStateComponent::create('payment', 'payment_result', detailName: 'status', timeout: 60, clock: $clock);
 
+$await->input->at->attach($prevNode->id);
+$await->output->run->attach($nextNode->id);
+$await->output->expired->attach($timeoutNode->id);
 $machine->addDefinition($await);
-$machine->addTransition($prevNode->id,       $await->input->trigger);
-$machine->addTransition($await->output->done,    $nextNode->id);
-$machine->addTransition($await->output->expired, $timeoutNode->id);
 ```
 
-### SwitchCaseComponent
+### ChoiceComponent
 
-Routes to the first output whose predicate returns `true` (XOR gateway).
+Routes to the first output whose predicate accepts (XOR gateway). Port: input `trigger`; one output per branch.
 
 ```php
-$switch = SwitchCaseComponent::create([
-    'approved' => fn(States $s): bool => $s->getState('decision')?->details['value']?->value === 'approved',
-    'rejected' => fn(States $s): bool => $s->getState('decision')?->details['value']?->value === 'rejected',
+$choice = ChoiceComponent::create('decision', [
+    'approved' => fn(States $s): TransitionConditionDecision => $s->getState('decision')?->details['value']?->value === 'approved'
+        ? TransitionConditionDecision::Accepted
+        : TransitionConditionDecision::Rejected,
+    'rejected' => null, // no predicate - always matches, so keep it last
 ]);
 
-$machine->addDefinition($switch);
-$machine->addTransition($prevNode->id,           $switch->input->trigger);
-$machine->addTransition($switch->output->approved, $approvedNode->id);
-$machine->addTransition($switch->output->rejected, $rejectedNode->id);
+$choice->input->trigger->attach($prevNode->id);
+$choice->output->approved->attach($approvedNode->id);
+$choice->output->rejected->attach($rejectedNode->id);
+$machine->addDefinition($choice);
 ```
 
-### ParallelComponent
+### ForkComponent
 
-Spawns one pointer per branch (AND-split). Branches can be unconditional or conditionally filtered.
+Spawns one pointer per branch (AND-split). Branches without a predicate always fire.
+Port: input `trigger`; one output per branch.
 
 ```php
-// all branches always fire
-$parallel = ParallelComponent::create(['email', 'sms', 'audit']);
+$fork = ForkComponent::create('notify', ['email', 'sms', 'audit'], [
+    'sms' => fn(States $s): TransitionConditionDecision => $s->getState('user')?->details['hasSms']?->value === true
+        ? TransitionConditionDecision::Accepted
+        : TransitionConditionDecision::Rejected,
+]);
 
-// some branches are conditional
-$parallel = ParallelComponent::create(
-    branches:   ['email', 'sms', 'audit'],
-    conditions: [
-        'sms'   => fn(States $s): bool => $s->getState('user')?->details['hasSms']?->value === true,
-        'audit' => fn(States $s): bool => $s->getState('order')?->details['highValue']?->value === true,
-    ],
-);
-
-$machine->addDefinition($parallel);
-$machine->addTransition($prevNode->id,           $parallel->input->trigger);
-$machine->addTransition($parallel->output->email, $emailNode->id);
-$machine->addTransition($parallel->output->sms,   $smsNode->id);
-$machine->addTransition($parallel->output->audit, $auditNode->id);
+$fork->input->trigger->attach($prevNode->id);
+$fork->output->email->attach($emailNode->id);
+$fork->output->sms->attach($smsNode->id);
+$fork->output->audit->attach($auditNode->id);
+$machine->addDefinition($fork);
 ```
 
 ### AwaitAllComponent
 
-AND-join: collects all declared branch pointers before continuing.
+AND-join: waits for every declared branch before continuing. Ports: one input per branch, output `done`.
 
 ```php
-$join = AwaitAllComponent::create(['email', 'sms', 'audit']);
+$join = AwaitAllComponent::create('notify', ['email', 'sms', 'audit']);
 
+$join->input->email->attach($emailNode->id);
+$join->input->sms->attach($smsNode->id);
+$join->input->audit->attach($auditNode->id);
+$join->output->done->attach($nextNode->id);
 $machine->addDefinition($join);
-$machine->addTransition($emailNode->id, $join->input->email);
-$machine->addTransition($smsNode->id,   $join->input->sms);
-$machine->addTransition($auditNode->id, $join->input->audit);
-$machine->addTransition($join->output->done, $nextNode->id);
 ```
+
+### RaceFirstComponent
+
+The first pointer to arrive continues, every later one is terminated. Ports: input `gateway`, output `winner`.
 
 ### AsyncComponent
 
-Dispatches a `Task` exactly once, then suspends until a named state confirms completion. An `AwaitStateStamp` is automatically added to the task envelope so the handler knows which state key to write back.
+Dispatches a `Task` once per visit, then waits until the task handler reports the result.
+Ports: input `trigger`, outputs `success`, `fail` and `expired`.
 
 ```php
 $async = AsyncComponent::create(
-    stateName:   'payment_result',
-    taskFactory: fn(States $s): Task => new ProcessPaymentTask(
-        $s->getState('order')?->details['id']?->value,
-    ),
+    'payment',
+    fn(States $s): Task => new ProcessPaymentTask($s->getState('order')?->details['id']?->value),
     timeout: 120,
 );
 
+$async->input->trigger->attach($prevNode->id);
+$async->output->success->attach($paidNode->id);
+$async->output->fail->attach($declinedNode->id);
+$async->output->expired->attach($timeoutNode->id);
 $machine->addDefinition($async);
-$machine->addTransition($prevNode->id,      $async->input->trigger);
-$machine->addTransition($async->output->done,    $nextNode->id);
-$machine->addTransition($async->output->expired, $timeoutNode->id);
 ```
 
-The external task handler reads `AwaitStateStamp::$stateName` from the envelope and calls:
+The task envelope carries an `AwaitStateStamp`. The task handler - in the same process
+(`ImmediateTaskBus`) or later, after the `Execution` was persisted (`DeferredTaskBus`) - reports
+the result and the machine is driven again:
 
 ```php
-$execution->states->defineState('payment_result', [
-    new StateDetail('status', 'completed'),
-]);
+AsyncTaskHandledNotifier::success($execution, $envelope); // or ::fail()
 $machine->execute($execution); // pointer resumes
 ```
+
+A result of a task dispatched by an earlier visit of the same component (a late or duplicated
+delivery after a cycle) is ignored - `notify()` returns `false` then.
 
 ## Built-in Transition Strategies
 
