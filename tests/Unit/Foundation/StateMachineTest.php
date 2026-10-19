@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation;
 
+use PhpArchitecture\Graph\Graph;
+use PhpArchitecture\Graph\Vertex\Vertex;
+use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
+use PhpArchitecture\StateMachine\Foundation\Config\StateMachineConfig;
 use PhpArchitecture\StateMachine\Foundation\Config\Exception\NoTransitionStrategyException;
 use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddNodeDuringExecutionException;
 use PhpArchitecture\StateMachine\Foundation\Exception\Modification\CannotAddTransitionDuringExecutionException;
@@ -169,7 +173,69 @@ class StateMachineTest extends TestCase
 
         $this->expectException(NodeNotFoundException::class);
 
-        $machine->getNodePublic(NodeId::create('state-machine.unknown.node'));
+        $machine->getNode(NodeId::create('state-machine.unknown.node'));
+    }
+
+    #[Test]
+    public function getNodeReturnsNodeAddedThroughDefinition(): void
+    {
+        $machine = $this->makeMachine($this->createStub(ContainerInterface::class));
+        $start = $this->makeNode('state-machine.test.lookup.start', 'h');
+        $machine->addNodePublic($start);
+        $await = AwaitStateComponent::create('state-machine.test.lookup.await', 'answer');
+        $await->input->at->attach($start->id());
+        $machine->addDefinition($await);
+
+        $awaitName = 'state-machine.await.state-machine.test.lookup.await.answer';
+        $node = $machine->getNode(NodeId::create($awaitName));
+
+        $this->assertSame($awaitName, $node->name());
+        $this->assertSame($start, $machine->getNode($start->id()));
+    }
+
+    #[Test]
+    public function hasNodeTellsWhetherTheDefinitionContainsTheNode(): void
+    {
+        $machine = $this->makeMachine($this->createStub(ContainerInterface::class));
+        $node = $this->makeNode('state-machine.test.lookup.known', 'h');
+        $machine->addNodePublic($node);
+
+        $this->assertTrue($machine->hasNode($node->id()));
+        $this->assertFalse($machine->hasNode(NodeId::create('state-machine.test.lookup.unknown')));
+    }
+
+    #[Test]
+    public function getNodesAndGetTransitionsReflectTheDefinition(): void
+    {
+        $machine = $this->makeMachine($this->createStub(ContainerInterface::class));
+        $nodeA = $this->makeNode('state-machine.test.lookup.a', 'h');
+        $nodeB = $this->makeNode('state-machine.test.lookup.b', 'h');
+        $machine->addNodePublic($nodeA);
+        $machine->addNodePublic($nodeB);
+        $machine->addTransition($nodeA->id(), $nodeB->id());
+
+        $this->assertSame([$nodeA->id()->toString() => $nodeA, $nodeB->id()->toString() => $nodeB], $machine->getNodes());
+
+        $transitions = $machine->getTransitions();
+        $this->assertCount(1, $transitions);
+        $this->assertTrue($nodeA->id()->equals($transitions[0]->input));
+        $this->assertTrue($nodeB->id()->equals($transitions[0]->output));
+    }
+
+    #[Test]
+    public function getNodesSkipsVerticesThatAreNotNodes(): void
+    {
+        $ghost = NodeId::create('state-machine.test.lookup.ghost');
+        $graph = new Graph((new StateMachineConfig())->toGraphConfig());
+        $graph->vertexStore->addVertex(new Vertex($ghost));
+        $machine = new ConcreteStateMachine($this->createStub(ContainerInterface::class), $graph);
+        $node = $this->makeNode('state-machine.test.lookup.real', 'h');
+        $machine->addNodePublic($node);
+
+        $this->assertSame([$node->id()->toString() => $node], $machine->getNodes());
+        $this->assertFalse($machine->hasNode($ghost));
+        $this->expectException(NodeNotFoundException::class);
+        $machine->getNode($ghost);
     }
 
     #[Test]
@@ -408,11 +474,6 @@ class ConcreteStateMachine extends StateMachine
     public function addNodePublic(\PhpArchitecture\StateMachine\Foundation\Node\NodeInterface $node): static
     {
         return $this->addNode($node);
-    }
-
-    public function getNodePublic(NodeId $id): \PhpArchitecture\StateMachine\Foundation\Node\NodeInterface
-    {
-        return $this->getNode($id);
     }
 
     /** @return \PhpArchitecture\StateMachine\Foundation\Transition\Transition[] */

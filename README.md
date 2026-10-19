@@ -91,6 +91,16 @@ Returns:
 - `ExecutionStatus::Running` — progress was made but pointers remain
 - `ExecutionStatus::Suspended` — no progress, all pointers are blocked
 
+Pointers, pointer events and technical state keys carry only `NodeId`s. The definition can be read
+back to turn them into nodes, for example in a log or audit trail:
+
+```php
+$machine->getNode($pointer->nodeId)->name(); // throws NodeNotFoundException for an unknown id
+$machine->hasNode($nodeId);
+$machine->getNodes();       // array<string,NodeInterface> keyed by node id
+$machine->getTransitions(); // Transition[]
+```
+
 ### Node
 
 Extend `abstract class Node` for each step in the workflow. Override `handlerClass()` to return the FQCN of the `NodeHandlerInterface` implementation resolved by the PSR-11 container.

@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Foundation;
 
 use PhpArchitecture\Graph\Edge\EdgeInterface;
 use PhpArchitecture\Graph\Graph;
+use PhpArchitecture\Graph\Vertex\VertexInterface;
 use PhpArchitecture\StateMachine\Foundation\Config\StateMachineConfig;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
@@ -30,7 +31,6 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Output\Transitio
 use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
-use Throwable;
 
 abstract class StateMachine
 {
@@ -209,15 +209,42 @@ abstract class StateMachine
         );
     }
 
-    protected function getNode(NodeId $id): NodeInterface
+    /**
+     * @throws NodeNotFoundException when the definition has no node with this id
+     */
+    public function getNode(NodeId $id): NodeInterface
     {
-        try {
-            /** @var NodeInterface $node */
-            $node = $this->graph->vertexStore->getVertex($id);
-            return $node;
-        } catch (Throwable $e) {
-            throw new NodeNotFoundException("Node '{$id}' not found in the graph.", previous: $e);
+        $node = $this->graph->vertexStore->getVertex($id);
+        if (!$node instanceof NodeInterface) {
+            throw new NodeNotFoundException("Node '{$id}' not found in the graph.");
         }
+
+        return $node;
+    }
+
+    public function hasNode(NodeId $id): bool
+    {
+        return $this->graph->vertexStore->getVertex($id) instanceof NodeInterface;
+    }
+
+    /**
+     * @return array<string,NodeInterface> keyed by node id
+     */
+    public function getNodes(): array
+    {
+        /** @var array<string,NodeInterface> $nodes */
+        $nodes = $this->graph->vertexStore->getVertices(static fn(VertexInterface $vertex): bool => $vertex instanceof NodeInterface);
+        return $nodes;
+    }
+
+    /**
+     * @return Transition[]
+     */
+    public function getTransitions(): array
+    {
+        /** @var Transition[] $transitions */
+        $transitions = array_values($this->graph->edgeStore->getEdges(static fn(EdgeInterface $edge): bool => $edge instanceof Transition));
+        return $transitions;
     }
 
     /**
