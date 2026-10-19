@@ -192,7 +192,8 @@ container does not provide them, the machine creates them itself.
 
 Waits until a named state (optionally with a given detail) appears in `States`, with an optional timeout.
 Ports: input `at`, outputs `run` and `expired`. The timeout window starts on every visit, so the
-component can be re-entered through a cycle.
+component can be re-entered through a cycle. `expired` becomes available once exactly `timeout`
+seconds have passed since the visit (`now >= visit + timeout`).
 
 ```php
 $await = AwaitStateComponent::create('payment', 'payment_result', detailName: 'status', timeout: 60, clock: $clock);
@@ -261,7 +262,8 @@ The first pointer to arrive continues, every later one is terminated. Ports: inp
 ### AsyncComponent
 
 Dispatches a `Task` once per visit, then waits until the task handler reports the result.
-Ports: input `trigger`, outputs `success`, `fail` and `expired`.
+Ports: input `trigger`, outputs `success`, `fail` and `expired`. `expired` follows the same rule as in
+`AwaitStateComponent`: available once exactly `timeout` seconds have passed since the visit.
 
 ```php
 $async = AsyncComponent::create(

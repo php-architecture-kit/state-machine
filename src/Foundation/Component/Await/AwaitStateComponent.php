@@ -106,7 +106,7 @@ class AwaitStateComponent extends Definition
             return false;
         }
 
-        return $clock->now() > $expiresAt->value;
+        return $clock->now() >= $expiresAt->value;
     }
 
     private static function expiredAtStateName(NodeId $nodeId): string
