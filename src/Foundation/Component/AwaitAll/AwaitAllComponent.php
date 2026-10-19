@@ -64,7 +64,7 @@ class AwaitAllComponent extends Definition
             $arrivalStates[$branch] = $arrivalNode->stateName();
         }
 
-        $raceFirstComponent = RaceFirstComponent::create("await-all-{$uniqueName}");
+        $raceFirstComponent = RaceFirstComponent::define("await-all-{$uniqueName}");
 
         $joinNode = new PassthroughNode("state-machine.await-all.{$uniqueName}.join");
         $instance->addNode($joinNode);

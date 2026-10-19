@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\RaceFirst;
 
+use Deprecated;
 use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\Node\RaceFirstTerminalNode;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
@@ -15,6 +16,10 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Strategy\Default\FirstVal
 /**
  * RaceFirstComponent - first pointer to arrive wins and continues,
  * all subsequent pointers are terminated.
+ *
+ * @deprecated since 1.10.0, use RaceComponent. The winner is remembered for the lifetime of the
+ *             Execution, so the component is not cycle-safe; it is kept unchanged for existing
+ *             definitions and persisted executions and will be removed in 2.0.
  *
  * Ports:
  *   - input: gateway (single input)
@@ -37,7 +42,18 @@ class RaceFirstComponent extends Definition
      *
      * @param string $uniqueName Unique identifier for this component instance
      */
+    #[Deprecated('Use RaceComponent, which is cycle-safe.', '1.10.0')]
     public static function create(string $uniqueName): self
+    {
+        return self::define($uniqueName);
+    }
+
+    /**
+     * Builds the component without the deprecation notice, for AwaitAllComponent.
+     *
+     * @internal
+     */
+    public static function define(string $uniqueName): self
     {
         $baseName = "state-machine.race-first.{$uniqueName}";
 
