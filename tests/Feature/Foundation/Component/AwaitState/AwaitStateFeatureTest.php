@@ -153,6 +153,52 @@ class AwaitStateFeatureTest extends TestCase
     }
 
     #[Test]
+    public function pointerReachesExpiredNodeExactlyAtTheTimeout(): void
+    {
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node14";
+        $doneName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node15";
+        $expiredName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node16";
+
+        $clock = ManualClock::at(new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC')));
+        $component = AwaitStateComponent::create('user_answer', 'user_answer', null, 60, $clock);
+
+        $machine = $this->makeMachine($this->makeContainer());
+        $machine->buildWithExpiredOutput($startName, $doneName, $expiredName, $component);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt(NodeId::create($startName));
+
+        $machine->execute($execution);
+        $clock->advanceSeconds(60);
+        $status = $machine->execute($execution);
+
+        $this->assertSame(ExecutionStatus::Completed, $status);
+    }
+
+    #[Test]
+    public function pointerKeepsWaitingJustBeforeTheTimeout(): void
+    {
+        $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node17";
+        $doneName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node18";
+        $expiredName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node19";
+
+        $clock = ManualClock::at(new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC')));
+        $component = AwaitStateComponent::create('user_answer', 'user_answer', null, 60, $clock);
+
+        $machine = $this->makeMachine($this->makeContainer());
+        $machine->buildWithExpiredOutput($startName, $doneName, $expiredName, $component);
+
+        $execution = Execution::create();
+        $execution->pointers->startAt(NodeId::create($startName));
+
+        $machine->execute($execution);
+        $clock->set(new DateTimeImmutable('2025-01-01 12:00:59.999999', new DateTimeZone('UTC')));
+        $status = $machine->execute($execution);
+
+        $this->assertSame(ExecutionStatus::Suspended, $status);
+    }
+
+    #[Test]
     public function machineCompletesAfterMultipleSuspendsAndStateDefined(): void
     {
         $startName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node12";

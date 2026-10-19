@@ -42,6 +42,26 @@ class AsyncTimeoutFeatureTest extends TestCase
         $this->assertSame(['async-timeout.start', 'async-timeout.expired'], AsyncTimeoutVisitHandler::$visits);
     }
 
+    #[Test]
+    public function pointerLeavesThroughExpiredExactlyAtTheTimeout(): void
+    {
+        $clock = ManualClock::at(new DateTimeImmutable('2026-01-01 12:00:00', new DateTimeZone('UTC')));
+        $machine = new AsyncTimeoutMachine(new AsyncTimeoutContainer(), $clock);
+        $execution = Execution::create();
+        $execution->pointers->startAt($machine->start->id);
+
+        $machine->execute($execution);
+        $machine->execute($execution);
+
+        $clock->advanceSeconds(9);
+        $this->assertSame(ExecutionStatus::Suspended, $machine->execute($execution));
+
+        $clock->advanceSeconds(1);
+        $machine->execute($execution);
+
+        $this->assertSame(['async-timeout.start', 'async-timeout.expired'], AsyncTimeoutVisitHandler::$visits);
+    }
+
     protected function setUp(): void
     {
         AsyncTimeoutVisitHandler::$visits = [];
