@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\AwaitState;
 
-use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use PhpArchitecture\Clock\ManualClock;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNodeHandler;
@@ -21,7 +21,6 @@ use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
@@ -136,16 +135,7 @@ class AwaitStateFeatureTest extends TestCase
         $expiredName = "state-machine.feature.foundation.component.awaitstate.awaitstate.node11";
 
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
-        $afterTimeout = $start->add(new DateInterval('PT61S'));
-
-        $clock = $this->createStub(ClockInterface::class);
-        $call = 0;
-        $clock->method('now')->willReturnCallback(
-            function () use ($start, $afterTimeout, &$call): DateTimeImmutable {
-                $call++;
-                return $call <= 3 ? $start : $afterTimeout;
-            },
-        );
+        $clock = ManualClock::at($start);
 
         $component = AwaitStateComponent::create('user_answer', 'user_answer', null, 60, $clock);
 
@@ -156,6 +146,7 @@ class AwaitStateFeatureTest extends TestCase
         $execution->pointers->startAt(NodeId::create($startName));
 
         $machine->execute($execution);
+        $clock->advanceSeconds(61);
         $status = $machine->execute($execution);
 
         $this->assertSame(ExecutionStatus::Completed, $status);

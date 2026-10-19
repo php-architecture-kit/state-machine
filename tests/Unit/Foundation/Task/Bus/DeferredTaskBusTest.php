@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Task\Bus;
 
 use DateTimeImmutable;
+use PhpArchitecture\Clock\FrozenClock;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Default\DeferredTaskBus;
 use PhpArchitecture\StateMachine\Foundation\Task\Bus\Stamp\DeferredAtStamp;
 use PhpArchitecture\StateMachine\Foundation\Task\Task;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Clock\ClockInterface;
 
 class DeferredTaskBusTest extends TestCase
 {
@@ -21,16 +21,7 @@ class DeferredTaskBusTest extends TestCase
 
     private function makeBus(DateTimeImmutable $now = new DateTimeImmutable()): DeferredTaskBus
     {
-        $clock = new class($now) implements ClockInterface {
-            public function __construct(private readonly DateTimeImmutable $now) {}
-
-            public function now(): DateTimeImmutable
-            {
-                return $this->now;
-            }
-        };
-
-        return new DeferredTaskBus($clock);
+        return new DeferredTaskBus(FrozenClock::at($now));
     }
 
     #[Test]
