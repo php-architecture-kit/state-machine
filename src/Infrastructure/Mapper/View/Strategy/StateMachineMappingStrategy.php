@@ -4,26 +4,25 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Infrastructure\Mapper\View\Strategy;
 
-use PhpArchitecture\Graph\Edge\EdgeInterface;
-use PhpArchitecture\Graph\Vertex\VertexInterface;
 use PhpArchitecture\StateMachine\Foundation\StateMachine;
 use PhpArchitecture\StateMachine\Foundation\Node\NodeInterface;
-use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
+use PhpArchitecture\StateMachine\Foundation\Transition\Transition;
 use PhpArchitecture\StateMachine\Infrastructure\Mapper\View\Exception\UnsupportedResourceException;
-use PhpArchitecture\StateMachine\Presentation\View\EdgeView;
 use PhpArchitecture\StateMachine\Presentation\View\NodeView;
 use PhpArchitecture\StateMachine\Presentation\View\StateMachineView;
 use PhpArchitecture\StateMachine\Presentation\View\TransitionView;
-use PhpArchitecture\StateMachine\Presentation\View\VertexView;
-use ReflectionClass;
 
 class StateMachineMappingStrategy implements StateMachineViewMappingStrategy
 {
-    public function __construct(
+    /**
+     * @param ?VertexMappingStrategy $vertexStrategy deprecated, unused: a StateMachine exposes only its nodes
+     * @param ?EdgeMappingStrategy   $edgeStrategy   deprecated, unused: a StateMachine exposes only its transitions
+     */
+    public function __construct( // @phpstan-ignore constructor.unusedParameter, constructor.unusedParameter (both kept for BC)
         private readonly NodeMappingStrategy $nodeStrategy,
         private readonly TransitionMappingStrategy $transitionStrategy,
-        private readonly VertexMappingStrategy $vertexStrategy,
-        private readonly EdgeMappingStrategy $edgeStrategy,
+        ?VertexMappingStrategy $vertexStrategy = null,
+        ?EdgeMappingStrategy $edgeStrategy = null,
     ) {}
 
     public function supports(object $resource): bool
@@ -39,41 +38,19 @@ class StateMachineMappingStrategy implements StateMachineViewMappingStrategy
             );
         }
 
-        $nodes           = [];
-        $transitions     = [];
-        $unknownVertices = [];
-        $unknownEdges    = [];
-
-        $reflection = new ReflectionClass($resource);
-        $graphProp  = $reflection->getProperty('graph');
-        $graph      = $graphProp->getValue($resource);
-
-        foreach ($graph->vertexStore->getVertices() as $vertex) {
-            if ($vertex instanceof NodeInterface) {
-                $view = $this->nodeStrategy->mapToView($vertex);
-                $nodes[] = $view;
-            } elseif ($vertex instanceof VertexInterface) {
-                $view = $this->vertexStrategy->mapToView($vertex);
-                $unknownVertices[] = $view;
-            }
-        }
-
-        foreach ($graph->edgeStore->getEdges() as $edge) {
-            if ($edge instanceof TransitionInterface) {
-                $view = $this->transitionStrategy->mapToView($edge);
-                $transitions[] = $view;
-            } elseif ($edge instanceof EdgeInterface) {
-                $view = $this->edgeStrategy->mapToView($edge);
-                $unknownEdges[] = $view;
-            }
-        }
+        $nodes = array_map(
+            fn(NodeInterface $node): NodeView => $this->nodeStrategy->mapToView($node),
+            array_values($resource->getNodes()),
+        );
+        $transitions = array_map(
+            fn(Transition $transition): TransitionView => $this->transitionStrategy->mapToView($transition),
+            $resource->getTransitions(),
+        );
 
         return new StateMachineView(
             class: get_class($resource),
             nodes: $nodes,
             transitions: $transitions,
-            unknownVertices: $unknownVertices,
-            unknownEdges: $unknownEdges,
         );
     }
 }
