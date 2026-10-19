@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Foundation\Component\AwaitAll;
 
+use Deprecated;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllArrivalNode;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllSyncNode;
 use PhpArchitecture\StateMachine\Foundation\Component\RaceFirst\RaceFirstComponent;
@@ -13,6 +14,11 @@ use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\Passthrough
 use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 
+/**
+ * @deprecated since 1.10.0, use JoinComponent. Arrivals are remembered for the lifetime of the
+ *             Execution, so the component is not cycle-safe; it is kept unchanged for existing
+ *             definitions and persisted executions and will be removed in 2.0.
+ */
 class AwaitAllComponent extends Definition
 {
     /** @var Port output */
@@ -29,6 +35,7 @@ class AwaitAllComponent extends Definition
      *
      * @param string[] $branches Names of the input branches (become input port names).
      */
+    #[Deprecated('Use JoinComponent, which is cycle-safe.', '1.10.0')]
     public static function create(string $uniqueName, array $branches): self
     {
         $instance = self::newInstance(
