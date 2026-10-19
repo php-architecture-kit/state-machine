@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\AwaitAll;
 
+use Deprecated;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\AwaitAllComponent;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllArrivalNode;
 use PhpArchitecture\StateMachine\Foundation\Component\AwaitAll\Node\AwaitAllSyncNode;
@@ -14,6 +15,7 @@ use PhpArchitecture\StateMachine\Foundation\State\States;
 use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\TransitionConditionDecision;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 class AwaitAllComponentTest extends TestCase
 {
@@ -28,6 +30,15 @@ class AwaitAllComponentTest extends TestCase
             $component->input->{$branch}->attach(NodeId::create("state-machine.unit.foundation.component.awaitall.awaitallcompone.node1"));
         }
         $component->output->done->attach(NodeId::create("state-machine.unit.foundation.component.awaitall.awaitallcompone.node2"));
+    }
+
+    #[Test]
+    public function createIsDeprecatedInFavourOfJoinComponent(): void
+    {
+        $attributes = (new ReflectionMethod(AwaitAllComponent::class, 'create'))->getAttributes(Deprecated::class);
+
+        $this->assertCount(1, $attributes);
+        $this->assertStringContainsString('JoinComponent', $attributes[0]->newInstance()->message ?? '');
     }
 
     #[Test]

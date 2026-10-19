@@ -195,7 +195,7 @@ $machine->addDefinition($component);
 ```
 
 Components use the package's own node handlers (`PassthroughNodeHandler`, `AwaitStateNodeHandler`,
-`CreateAsyncTaskNodeHandler`, `AwaitAllArrivalNodeHandler`). They have no dependencies: when your
+`CreateAsyncTaskNodeHandler`, `JoinArrivalNodeHandler`, `AwaitAllArrivalNodeHandler`). They have no dependencies: when your
 container does not provide them, the machine creates them itself.
 
 ### AwaitStateComponent
@@ -251,12 +251,13 @@ $fork->output->audit->attach($auditNode->id);
 $machine->addDefinition($fork);
 ```
 
-### AwaitAllComponent
+### JoinComponent
 
-AND-join: waits for every declared branch before continuing. Ports: one input per branch, output `done`.
+AND-join: continues once every declared input has a pointer. Ports: one input per declared input
+(at least two), output `done`.
 
 ```php
-$join = AwaitAllComponent::create('notify', ['email', 'sms', 'audit']);
+$join = JoinComponent::create('notify', ['email', 'sms', 'audit']);
 
 $join->input->email->attach($emailNode->id);
 $join->input->sms->attach($smsNode->id);
@@ -264,6 +265,36 @@ $join->input->audit->attach($auditNode->id);
 $join->output->done->attach($nextNode->id);
 $machine->addDefinition($join);
 ```
+
+Pointers wait at their input, so an `Execution` with a pointer waiting at the join stays `Suspended`.
+A round takes one pointer from every input: the pointer that completes the round continues through
+`done`, and the other pointers of the round are removed. When they are not removed in the same pass,
+`execute()` returns `Running` and the next call removes them, so keep calling `execute()` while it
+returns `Running`. A second pointer arriving on the same input waits for the next round. All pointers
+are treated alike, whether they come from a fork or were started by a signal. The counters live in the
+technical state of the `Execution` and drop back to zero after every round, so the join can be
+re-entered through a cycle and the `Execution` can be persisted at any point.
+
+### AwaitAllComponent (deprecated)
+
+Deprecated since 1.10.0, removed in 2.0 - use `JoinComponent`. AND-join: waits for every declared
+branch before continuing. Ports: one input per branch, output `done`. Arrivals are remembered for the
+lifetime of the `Execution`, so the component does not work when re-entered through a cycle. Several
+pointers arriving on one input in the same round are merged into that round.
+
+**Migrating to `JoinComponent`.** The signature and the ports are the same, only the class changes:
+
+```php
+// before
+$join = AwaitAllComponent::create('notify', ['email', 'sms', 'audit']);
+
+// after
+$join = JoinComponent::create('notify', ['email', 'sms', 'audit']);
+```
+
+The two components keep their state under different nodes. Deploy the change when no persisted
+`Execution` has a pointer waiting at this join; otherwise that pointer waits in a node that is no longer
+in the definition (`NodeNotFoundException`) and the arrivals recorded so far are not counted.
 
 ### RaceComponent
 
