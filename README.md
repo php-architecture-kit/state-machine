@@ -265,9 +265,51 @@ $join->output->done->attach($nextNode->id);
 $machine->addDefinition($join);
 ```
 
-### RaceFirstComponent
+### RaceComponent
 
-The first pointer to arrive continues, every later one is terminated. Ports: input `gateway`, output `winner`.
+The first pointer to arrive continues, one pointer from every other input loses and is removed.
+Ports: one input per declared input (at least two), output `winner`.
+
+```php
+$race = RaceComponent::create('reply', ['answer', 'timeout']);
+
+$race->input->answer->attach($answeredNode->id);
+$race->input->timeout->attach($timedOutNode->id);
+$race->output->winner->attach($nextNode->id);
+$machine->addDefinition($race);
+```
+
+A round is one arrival per input. The winner leaves at once, and every other input owes one loser:
+the next pointer arriving there is removed. All pointers are treated alike, whether they come from a
+fork or were started by a signal. The counters live in the technical state of the `Execution` and drop
+back to zero once all losers have arrived, so the race can be re-entered through a cycle and the
+`Execution` can be persisted at any point. A loser that never reaches the race is never removed and
+keeps the `Execution` from completing.
+
+### RaceFirstComponent (deprecated)
+
+Deprecated since 1.10.0, removed in 2.0 - use `RaceComponent`. The first pointer to arrive continues,
+every later one is terminated. Ports: input `gateway`, output `winner`. The winner is remembered for the
+lifetime of the `Execution`, so the component does not work when re-entered through a cycle.
+
+**Migrating to `RaceComponent`.** Give each competing branch its own input instead of attaching all of
+them to `gateway`:
+
+```php
+// before
+$race = RaceFirstComponent::create('reply');
+$race->input->gateway->attach($answeredNode->id);
+$race->input->gateway->attach($timedOutNode->id);
+
+// after
+$race = RaceComponent::create('reply', ['answer', 'timeout']);
+$race->input->answer->attach($answeredNode->id);
+$race->input->timeout->attach($timedOutNode->id);
+```
+
+The two components keep their state under different nodes. Deploy the change when no persisted
+`Execution` has an open round of this race (a winner has passed but a loser is still on its way);
+otherwise the new component does not know about that loser and lets it win.
 
 ### AsyncComponent
 
