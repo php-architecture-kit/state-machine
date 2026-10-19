@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\Component\AwaitState;
 
-use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use PhpArchitecture\Clock\FrozenClock;
+use PhpArchitecture\Clock\ManualClock;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
 use PhpArchitecture\StateMachine\Foundation\Definition\Definition;
 use PhpArchitecture\StateMachine\Foundation\Node\Variant\Passthrough\PassthroughNode;
@@ -20,20 +21,12 @@ use PhpArchitecture\StateMachine\Foundation\Transition\Condition\Output\Transiti
 use PhpArchitecture\StateMachine\Foundation\Transition\TransitionInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Clock\ClockInterface;
 
 class AwaitStateComponentTest extends TestCase
 {
     private function makeStates(): States
     {
         return States::create(ExecutionId::new(), null, null, null);
-    }
-
-    private function makeClockAt(DateTimeImmutable $now): ClockInterface
-    {
-        $clock = $this->createStub(ClockInterface::class);
-        $clock->method('now')->willReturn($now);
-        return $clock;
     }
 
     /**
@@ -161,7 +154,7 @@ class AwaitStateComponentTest extends TestCase
     public function expiredTransitionReturnsRejectedWhenNotExpired(): void
     {
         $now = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
-        $clock = $this->makeClockAt($now);
+        $clock = FrozenClock::at($now);
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
@@ -175,16 +168,14 @@ class AwaitStateComponentTest extends TestCase
     public function expiredTransitionReturnsAcceptedAfterTimeoutElapsed(): void
     {
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
-        $afterTimeout = $start->add(new DateInterval('PT61S'));
-
-        $clock = $this->createStub(ClockInterface::class);
-        $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
+        $clock = ManualClock::at($start);
 
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();
 
         $expiredTransition->condition->check($states);
+        $clock->advanceSeconds(61);
         $decision = $expiredTransition->condition->check($states);
 
         $this->assertSame(TransitionConditionDecision::Accepted, $decision);
@@ -194,10 +185,7 @@ class AwaitStateComponentTest extends TestCase
     public function doneTransitionReturnsRejectedAfterTimeoutElapsed(): void
     {
         $start = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
-        $afterTimeout = $start->add(new DateInterval('PT61S'));
-
-        $clock = $this->createStub(ClockInterface::class);
-        $clock->method('now')->willReturnOnConsecutiveCalls($start, $afterTimeout, $afterTimeout);
+        $clock = ManualClock::at($start);
 
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [, $doneTransition] = $this->extractTransitions($component);
@@ -205,6 +193,7 @@ class AwaitStateComponentTest extends TestCase
         $states->defineState('my_state', []);
 
         $doneTransition->condition->check($states);
+        $clock->advanceSeconds(61);
         $decision = $doneTransition->condition->check($states);
 
         $this->assertSame(TransitionConditionDecision::Rejected, $decision);
@@ -226,7 +215,7 @@ class AwaitStateComponentTest extends TestCase
     public function expirationStateIsCreatedOnlyOnceEvenIfConditionCalledMultipleTimes(): void
     {
         $now = new DateTimeImmutable('2025-01-01 12:00:00', new DateTimeZone('UTC'));
-        $clock = $this->makeClockAt($now);
+        $clock = FrozenClock::at($now);
         $component = AwaitStateComponent::create('my_state', 'my_state', null, 60, $clock);
         [,, $expiredTransition] = $this->extractTransitions($component);
         $states = $this->makeStates();

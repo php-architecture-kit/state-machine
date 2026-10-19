@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\Async;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use PhpArchitecture\Clock\ManualClock;
 use PhpArchitecture\StateMachine\Foundation\Component\Async\AsyncComponent;
 use PhpArchitecture\StateMachine\Foundation\Execution\Execution;
 use PhpArchitecture\StateMachine\Foundation\Execution\ExecutionStatus;
@@ -27,19 +28,7 @@ class AsyncTimeoutFeatureTest extends TestCase
     #[Test]
     public function pointerLeavesThroughExpiredWhenTheResultDoesNotArriveInTime(): void
     {
-        $clock = new class implements ClockInterface {
-            public DateTimeImmutable $now;
-
-            public function __construct()
-            {
-                $this->now = new DateTimeImmutable('2026-01-01 12:00:00', new DateTimeZone('UTC'));
-            }
-
-            public function now(): DateTimeImmutable
-            {
-                return $this->now;
-            }
-        };
+        $clock = ManualClock::at(new DateTimeImmutable('2026-01-01 12:00:00', new DateTimeZone('UTC')));
         $machine = new AsyncTimeoutMachine(new AsyncTimeoutContainer(), $clock);
         $execution = Execution::create();
         $execution->pointers->startAt($machine->start->id);
@@ -47,7 +36,7 @@ class AsyncTimeoutFeatureTest extends TestCase
         $this->assertSame(ExecutionStatus::Running, $machine->execute($execution));
         $this->assertSame(ExecutionStatus::Suspended, $machine->execute($execution));
 
-        $clock->now = $clock->now->modify('+11 seconds');
+        $clock->advanceSeconds(11);
         $machine->execute($execution);
 
         $this->assertSame(['async-timeout.start', 'async-timeout.expired'], AsyncTimeoutVisitHandler::$visits);

@@ -6,6 +6,7 @@ namespace PhpArchitecture\StateMachine\Tests\Feature\Foundation\Component\CycleS
 
 use DateTimeImmutable;
 use DateTimeZone;
+use PhpArchitecture\Clock\ManualClock;
 use PhpArchitecture\StateMachine\Foundation\Component\Async\AsyncComponent;
 use PhpArchitecture\StateMachine\Foundation\Component\Async\AsyncTaskHandledNotifier;
 use PhpArchitecture\StateMachine\Foundation\Component\Await\AwaitStateComponent;
@@ -45,7 +46,7 @@ class CycleSafetyFeatureTest extends TestCase
     #[Test]
     public function awaitStateTimeoutIsRenewedOnEveryVisit(): void
     {
-        $clock = new CycleSafetyClock();
+        $clock = ManualClock::at(new DateTimeImmutable('2026-01-01 12:00:00', new DateTimeZone('UTC')));
         $machine = new AwaitLoopMachine(new CycleSafetyContainer(), $clock);
         $execution = Execution::create();
         $execution->pointers->startAt($machine->start->id);
@@ -54,17 +55,17 @@ class CycleSafetyFeatureTest extends TestCase
         $this->assertSame('cycle-safety.await.door', $machine->lastVisited());
 
         // first lap: answered after 8 of 10 seconds, then the cycle brings the pointer back
-        $clock->advance(8);
+        $clock->advanceSeconds(8);
         $execution->states->defineState('close_button', ['pressed' => true]);
         $machine->execute($execution);
         $this->assertSame('cycle-safety.await.door', $machine->lastVisited());
 
         // second lap: 5 seconds into a fresh 10-second window is not expired
-        $clock->advance(5);
+        $clock->advanceSeconds(5);
         $machine->execute($execution);
         $this->assertSame('cycle-safety.await.door', $machine->lastVisited());
 
-        $clock->advance(6);
+        $clock->advanceSeconds(6);
         $machine->execute($execution);
         $this->assertSame('cycle-safety.await.expired', $machine->lastVisited());
     }
@@ -166,26 +167,6 @@ class CycleSafetyFeatureTest extends TestCase
         $this->assertInstanceOf(TaskEnvelope::class, $envelope);
 
         return $envelope;
-    }
-}
-
-final class CycleSafetyClock implements ClockInterface
-{
-    private DateTimeImmutable $now;
-
-    public function __construct()
-    {
-        $this->now = new DateTimeImmutable('2026-01-01 12:00:00', new DateTimeZone('UTC'));
-    }
-
-    public function advance(int $seconds): void
-    {
-        $this->now = $this->now->modify("+{$seconds} seconds");
-    }
-
-    public function now(): DateTimeImmutable
-    {
-        return $this->now;
     }
 }
 
