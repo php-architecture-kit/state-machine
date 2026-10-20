@@ -7,6 +7,7 @@ namespace PhpArchitecture\StateMachine\Foundation\State;
 use ArrayAccess;
 use LogicException;
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
+use PhpArchitecture\StateMachine\Foundation\State\Exception\Definition\InvalidInputProvidedToStateDefinition;
 use PhpArchitecture\StateMachine\Foundation\State\Identity\StateId;
 use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\Technical\ArrayTransformation;
@@ -37,8 +38,11 @@ class State implements ArrayAccess
         $this->details = ArrayTransformation::indexBy($details, static fn(StateDetail $detail) => $detail->name);
     }
 
-    /** 
-     * @param array<string,mixed>|StateDetail[] $details
+    /**
+     * Accepts plain values keyed by detail name and StateDetail objects; a plain value becomes a StateDetail.
+     *
+     * @param array<int,StateDetail>|array<string,mixed> $details
+     * @throws InvalidInputProvidedToStateDefinition when a value without a detail name is not a StateDetail
      */
     public static function create(
         ExecutionId $executionId,
@@ -49,8 +53,16 @@ class State implements ArrayAccess
         foreach ($details as $key => $value) {
             if ($value instanceof StateDetail) {
                 $mappedDetails[] = $value;
-            } else {
+            } elseif (is_string($key)) {
                 $mappedDetails[] = new StateDetail($key, $value);
+            } else {
+                throw new InvalidInputProvidedToStateDefinition(sprintf(
+                    'State "%s": the detail at index %d has no name, so it must be a %s, %s given.',
+                    $name,
+                    $key,
+                    StateDetail::class,
+                    get_debug_type($value),
+                ));
             }
         }
 
@@ -63,8 +75,10 @@ class State implements ArrayAccess
         );
     }
 
-    /** 
-     * @param array<string,mixed>|StateDetail[] $details
+    /**
+     * Restores a persisted state, whose details are StateDetail objects.
+     *
+     * @param StateDetail[] $details
      */
     public static function recreate(
         ExecutionId $executionId,
