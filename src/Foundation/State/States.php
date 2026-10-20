@@ -190,20 +190,14 @@ class States extends AggregateRoot
      */
     public function defineOrModifyState(string $name, array $details): State
     {
+        $details = self::toStateDetails($details);
+
         $state = $this->findStoredState($name);
         if ($state === null) {
             return $this->defineState($name, $details);
         }
 
-        $changed = [];
-        foreach ($details as $key => $detail) {
-            if (!$detail instanceof StateDetail) {
-                $detail = new StateDetail((string) $key, $detail);
-            }
-            if (!$this->hasSameValue($state, $detail)) {
-                $changed[$detail->name] = $detail;
-            }
-        }
+        $changed = array_filter($details, fn(StateDetail $detail): bool => !$this->hasSameValue($state, $detail));
 
         if ($changed !== []) {
             $this->modifyState($state->id, $changed);
@@ -253,6 +247,23 @@ class States extends AggregateRoot
         }
 
         return null;
+    }
+
+    /**
+     * @param array<int,StateDetail>|array<string,mixed> $details
+     * @return array<string,StateDetail> detail name => detail; a later detail with the same name wins
+     */
+    private static function toStateDetails(array $details): array
+    {
+        $stateDetails = [];
+        foreach ($details as $key => $detail) {
+            if (!$detail instanceof StateDetail) {
+                $detail = new StateDetail((string) $key, $detail);
+            }
+            $stateDetails[$detail->name] = $detail;
+        }
+
+        return $stateDetails;
     }
 
     /** Identity, not equality: an object counts as changed, so a change is never lost. */

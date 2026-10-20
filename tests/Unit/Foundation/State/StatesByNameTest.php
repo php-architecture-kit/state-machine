@@ -37,7 +37,7 @@ class StatesByNameTest extends TestCase
     public function defineOrModifyStateSetsOnlyChangedDetailsAndKeepsTheOthers(): void
     {
         $states = $this->makeStates();
-        $states->defineState('car', ['floor' => 0, 'doors' => 'closed']);
+        $states->defineState('car', [new StateDetail('floor', 0), new StateDetail('doors', 'closed')]);
         $states->releaseEvents();
 
         $state = $states->defineOrModifyState('car', ['floor' => 3, 'doors' => 'closed', 'load' => 2]);
@@ -60,7 +60,7 @@ class StatesByNameTest extends TestCase
             }
         };
         $states = States::create(ExecutionId::new(), null, $policy, null);
-        $defined = $states->defineState('car', ['floor' => 3, 'stops' => [1, 2]]);
+        $defined = $states->defineState('car', [new StateDetail('floor', 3), new StateDetail('stops', [1, 2])]);
         $states->releaseEvents();
 
         $state = $states->defineOrModifyState('car', ['floor' => 3, 'stops' => [1, 2]]);
@@ -71,23 +71,53 @@ class StatesByNameTest extends TestCase
     }
 
     #[Test]
+    public function defineOrModifyStateGoesThroughTheModificationPolicyWhenSomethingChanges(): void
+    {
+        $policy = new class implements StateModificationPolicy {
+            public int $calls = 0;
+            public function assertStateModificationAllowed(State $original, State $changed, States $states): void
+            {
+                $this->calls++;
+            }
+        };
+        $states = States::create(ExecutionId::new(), null, $policy, null);
+        $states->defineState('car', [new StateDetail('floor', 0)]);
+
+        $states->defineOrModifyState('car', ['floor' => 1]);
+
+        $this->assertSame(1, $policy->calls);
+    }
+
+    #[Test]
+    public function defineOrModifyStatePassesStateDetailsToDefineState(): void
+    {
+        $states = DefineStateSpy::create(ExecutionId::new(), null, null, null);
+
+        $states->defineOrModifyState('car', ['floor' => 0, new StateDetail('doors', 'closed')]);
+
+        $this->assertEquals(['floor' => new StateDetail('floor', 0), 'doors' => new StateDetail('doors', 'closed')], $states->defined);
+    }
+
+    #[Test]
     public function defineOrModifyStateAcceptsStateDetails(): void
     {
         $states = $this->makeStates();
-        $states->defineState('car', ['floor' => 0]);
+        $states->defineState('car', [new StateDetail('floor', 0)]);
         $states->releaseEvents();
 
         $states->defineOrModifyState('car', [new StateDetail('floor', 0), new StateDetail('load', 1)]);
 
         $this->assertSame(['floor' => 0, 'load' => 1], $states->getState('car')?->values());
-        $this->assertSame(['load'], array_keys($states->releaseEvents()[0]->addedDetails));
+        $event = $states->releaseEvents()[0];
+        $this->assertInstanceOf(StateModifiedEvent::class, $event);
+        $this->assertSame(['load'], array_keys($event->addedDetails));
     }
 
     #[Test]
     public function anEqualObjectCountsAsChangedSoNoChangeIsLost(): void
     {
         $states = $this->makeStates();
-        $states->defineState('timer', ['at' => new DateTimeImmutable('2026-01-01 12:00 UTC')]);
+        $states->defineState('timer', [new StateDetail('at', new DateTimeImmutable('2026-01-01 12:00 UTC'))]);
         $states->releaseEvents();
 
         // == would call these equal (same instant) and drop the timezone change
@@ -102,8 +132,8 @@ class StatesByNameTest extends TestCase
     public function defineOrModifyStateTargetsTheFirstStateWithTheName(): void
     {
         $states = $this->makeStates();
-        $first = $states->defineState('car', ['floor' => 0]);
-        $second = $states->defineState('car', ['floor' => 0]);
+        $first = $states->defineState('car', [new StateDetail('floor', 0)]);
+        $second = $states->defineState('car', [new StateDetail('floor', 0)]);
 
         $states->defineOrModifyState('car', ['floor' => 5]);
 
@@ -212,5 +242,18 @@ class StatesByNameTest extends TestCase
     private function assertEventTypes(array $expected, States $states): void
     {
         $this->assertSame($expected, array_map(static fn(object $event): string => $event::class, $states->getEvents()));
+    }
+}
+
+final class DefineStateSpy extends States
+{
+    /** @var StateDetail[] */
+    public array $defined = [];
+
+    public function defineState(string $name, array $details): State
+    {
+        $this->defined = $details;
+
+        return parent::defineState($name, $details);
     }
 }
