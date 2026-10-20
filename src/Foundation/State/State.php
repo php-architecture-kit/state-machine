@@ -49,22 +49,7 @@ class State implements ArrayAccess
         string $name,
         array $details,
     ): static {
-        $mappedDetails = [];
-        foreach ($details as $key => $value) {
-            if ($value instanceof StateDetail) {
-                $mappedDetails[] = $value;
-            } elseif (is_string($key)) {
-                $mappedDetails[] = new StateDetail($key, $value);
-            } else {
-                throw new InvalidInputProvidedToStateDefinition(sprintf(
-                    'State "%s": the detail at index %d has no name, so it must be a %s, %s given.',
-                    $name,
-                    $key,
-                    StateDetail::class,
-                    get_debug_type($value),
-                ));
-            }
-        }
+        $mappedDetails = StateDetail::mapAll($name, $details, InvalidInputProvidedToStateDefinition::class);
 
         /** @phpstan-ignore-next-line */
         return new static(

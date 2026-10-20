@@ -175,6 +175,9 @@ $context->states->removeStateByName('order'); // does nothing when there is no s
   stored state, which takes precedence over the resolver from then on.
 - Names are not unique: `defineState()` accepts an existing name, and every name-based method works on the first
   state with that name. Use `defineOrModifyState()` to keep one state per name.
+- Details are keyed by their name. A value under a numeric key has no name, so it must be a `StateDetail`;
+  a plain value there is rejected (`InvalidInputProvidedToStateDefinition` when defining,
+  `CannotModifyStateException` when modifying). What a detail holds, e.g. a list, is up to you.
 - `State::value($detail, $default)` returns a stored `null` as `null`; `$default` is used only when the detail
   does not exist.
 - `defineState()`, `modifyState(StateId, …)` and `removeState(StateId)` remain available.
