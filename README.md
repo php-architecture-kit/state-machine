@@ -155,18 +155,29 @@ Tracks a single cursor position (`nodeId`). Pointers can be forked for parallel 
 
 ### State
 
-Named key-value bags attached to an execution.
+Named key-value bags attached to an execution. The whole graph shares them and addresses them by name.
 
 ```php
-$execution->states->defineState('order', [
-    new StateDetail('status', 'pending'),
-    new StateDetail('amount', 1500),
-]);
+// write: defines the state, or sets the given details and keeps the others
+$execution->states->defineOrModifyState('order', ['status' => 'pending', 'amount' => 1500]);
 
 // read inside a handler or transition condition
-$order = $context->states->getState('order');
-$status = $order?->details['status']?->value;
+$status = $context->states->getState('order')?->value('status') ?? 'new';
+$order = $context->states->getState('order')?->values(); // ['status' => 'pending', 'amount' => 1500]
+
+$context->states->removeStateByName('order'); // does nothing when there is no such state
 ```
+
+- `defineOrModifyState()` delegates to `defineState()` / `modifyState()`, so the policies run and the events are
+  recorded as usual. Only details whose value is not identical (`===`) to the stored one are set; when nothing
+  changes, no event is recorded. An object is compared by identity, so an equal but new object counts as a change.
+- The write methods look only at stored states. Writing a name that a `StateResolverInterface` provides defines a
+  stored state, which takes precedence over the resolver from then on.
+- Names are not unique: `defineState()` accepts an existing name, and every name-based method works on the first
+  state with that name. Use `defineOrModifyState()` to keep one state per name.
+- `State::value($detail, $default)` returns a stored `null` as `null`; `$default` is used only when the detail
+  does not exist.
+- `defineState()`, `modifyState(StateId, …)` and `removeState(StateId)` remain available.
 
 ### StateMachineConfig
 
@@ -220,7 +231,7 @@ Routes to the first output whose predicate accepts (XOR gateway). Port: input `t
 
 ```php
 $choice = ChoiceComponent::create('decision', [
-    'approved' => fn(States $s): TransitionConditionDecision => $s->getState('decision')?->details['value']?->value === 'approved'
+    'approved' => fn(States $s): TransitionConditionDecision => $s->getState('decision')?->value('value') === 'approved'
         ? TransitionConditionDecision::Accepted
         : TransitionConditionDecision::Rejected,
     'rejected' => null, // no predicate - always matches, so keep it last
@@ -239,7 +250,7 @@ Port: input `trigger`; one output per branch.
 
 ```php
 $fork = ForkComponent::create('notify', ['email', 'sms', 'audit'], [
-    'sms' => fn(States $s): TransitionConditionDecision => $s->getState('user')?->details['hasSms']?->value === true
+    'sms' => fn(States $s): TransitionConditionDecision => $s->getState('user')?->value('hasSms') === true
         ? TransitionConditionDecision::Accepted
         : TransitionConditionDecision::Rejected,
 ]);
@@ -351,7 +362,7 @@ Ports: input `trigger`, outputs `success`, `fail` and `expired`. `expired` follo
 ```php
 $async = AsyncComponent::create(
     'payment',
-    fn(States $s): Task => new ProcessPaymentTask($s->getState('order')?->details['id']?->value),
+    fn(States $s): Task => new ProcessPaymentTask($s->getState('order')?->value('id')),
     timeout: 120,
 );
 

@@ -113,4 +113,38 @@ class StateTest extends TestCase
         $this->assertSame('cart', $state->name);
         $this->assertArrayHasKey('qty', $state->details);
     }
+
+    #[Test]
+    public function valueReturnsTheDetailValue(): void
+    {
+        $state = State::create(ExecutionId::new(), 'car', ['floor' => 3]);
+
+        $this->assertSame(3, $state->value('floor'));
+    }
+
+    #[Test]
+    public function valueReturnsTheDefaultForAMissingDetail(): void
+    {
+        $state = State::create(ExecutionId::new(), 'car', []);
+
+        $this->assertNull($state->value('floor'));
+        $this->assertSame(0, $state->value('floor', 0));
+    }
+
+    #[Test]
+    public function valueReturnsAStoredNullInsteadOfTheDefault(): void
+    {
+        $state = State::create(ExecutionId::new(), 'car', ['floor' => null]);
+
+        $this->assertNull($state->value('floor', 0));
+    }
+
+    #[Test]
+    public function valuesMapsDetailNamesToValues(): void
+    {
+        $state = State::create(ExecutionId::new(), 'car', ['floor' => 3, 'doors' => 'open']);
+
+        $this->assertSame(['floor' => 3, 'doors' => 'open'], $state->values());
+        $this->assertSame([], State::create(ExecutionId::new(), 'car', [])->values());
+    }
 }

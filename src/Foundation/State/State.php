@@ -90,6 +90,18 @@ class State implements ArrayAccess
         );
     }
 
+    /** The value of the detail, or `$default` when the detail does not exist (a stored `null` is returned as `null`). */
+    public function value(string $detail, mixed $default = null): mixed
+    {
+        return isset($this->details[$detail]) ? $this->details[$detail]->value : $default;
+    }
+
+    /** @return array<string,mixed> detail name => value */
+    public function values(): array
+    {
+        return array_map(static fn(StateDetail $detail): mixed => $detail->value, $this->details);
+    }
+
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->details[$offset]);
