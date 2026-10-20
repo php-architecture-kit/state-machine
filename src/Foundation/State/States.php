@@ -9,6 +9,7 @@ use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
 use PhpArchitecture\StateMachine\Foundation\State\Event\StateDefinedEvent;
 use PhpArchitecture\StateMachine\Foundation\State\Event\StateModifiedEvent;
 use PhpArchitecture\StateMachine\Foundation\State\Event\StateRemovedEvent;
+use PhpArchitecture\StateMachine\Foundation\State\Exception\Definition\InvalidInputProvidedToStateDefinition;
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Definition\StateDefinitionException;
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Modification\CannotModifyStateException;
 use PhpArchitecture\StateMachine\Foundation\State\Exception\Modification\StateModificationException;
@@ -147,11 +148,7 @@ class States extends AggregateRoot
             unset($details[$detailToRemove]);
         }
 
-        foreach ($detailsToSet as $key => $detailToAdd) {
-            if (!$detailToAdd instanceof StateDetail) {
-                $detailToAdd = new StateDetail((string) $key, $detailToAdd);
-            }
-
+        foreach (StateDetail::mapAll($state->name, $detailsToSet, CannotModifyStateException::class) as $detailToAdd) {
             $existingDetail = $details[$detailToAdd->name] ?? null;
             if (null !== $existingDetail) {
                 $removedDetails[$detailToAdd->name] = $existingDetail;
@@ -190,14 +187,15 @@ class States extends AggregateRoot
      */
     public function defineOrModifyState(string $name, array $details): State
     {
-        $details = self::toStateDetails($details);
-
         $state = $this->findStoredState($name);
         if ($state === null) {
-            return $this->defineState($name, $details);
+            return $this->defineState($name, StateDetail::mapAll($name, $details, InvalidInputProvidedToStateDefinition::class));
         }
 
-        $changed = array_filter($details, fn(StateDetail $detail): bool => !$this->hasSameValue($state, $detail));
+        $changed = array_filter(
+            StateDetail::mapAll($name, $details, CannotModifyStateException::class),
+            fn(StateDetail $detail): bool => !$this->hasSameValue($state, $detail),
+        );
 
         if ($changed !== []) {
             $this->modifyState($state->id, $changed);
@@ -247,23 +245,6 @@ class States extends AggregateRoot
         }
 
         return null;
-    }
-
-    /**
-     * @param array<int,StateDetail>|array<string,mixed> $details
-     * @return array<string,StateDetail> detail name => detail; a later detail with the same name wins
-     */
-    private static function toStateDetails(array $details): array
-    {
-        $stateDetails = [];
-        foreach ($details as $key => $detail) {
-            if (!$detail instanceof StateDetail) {
-                $detail = new StateDetail((string) $key, $detail);
-            }
-            $stateDetails[$detail->name] = $detail;
-        }
-
-        return $stateDetails;
     }
 
     /** Identity, not equality: an object counts as changed, so a change is never lost. */

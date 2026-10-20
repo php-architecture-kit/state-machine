@@ -16,6 +16,8 @@ use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\StateMachine\Foundation\State\Resolver\StateResolverInterface;
 use PhpArchitecture\StateMachine\Foundation\State\State;
 use PhpArchitecture\StateMachine\Foundation\State\States;
+use PhpArchitecture\StateMachine\Foundation\State\Exception\Definition\InvalidInputProvidedToStateDefinition;
+use PhpArchitecture\StateMachine\Foundation\State\Exception\Modification\CannotModifyStateException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -211,6 +213,27 @@ class StatesByNameTest extends TestCase
 
         $this->assertSame([], $states->getEvents());
         $this->assertNotNull($states->getState('rates'));
+    }
+
+    #[Test]
+    public function defineOrModifyStateRejectsAPlainValueWithoutADetailNameWhenDefining(): void
+    {
+        $states = $this->makeStates();
+
+        $this->expectException(InvalidInputProvidedToStateDefinition::class);
+
+        $states->defineOrModifyState('car', ['floor' => 0, 'closed']);
+    }
+
+    #[Test]
+    public function defineOrModifyStateRejectsAPlainValueWithoutADetailNameWhenModifying(): void
+    {
+        $states = $this->makeStates();
+        $states->defineState('car', [new StateDetail('floor', 0)]);
+
+        $this->expectException(CannotModifyStateException::class);
+
+        $states->defineOrModifyState('car', ['floor' => 1, 'closed']);
     }
 
     /** @param StateResolverInterface[] $resolvers */

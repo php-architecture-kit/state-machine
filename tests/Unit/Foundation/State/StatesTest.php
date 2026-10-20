@@ -233,4 +233,32 @@ class StatesTest extends TestCase
 
         $this->assertTrue($policyCalled);
     }
+
+    #[Test]
+    public function modifyStateRejectsAPlainValueWithoutADetailName(): void
+    {
+        $states = $this->makeStates();
+        $state = $states->defineState('order', [new StateDetail('amount', 10)]);
+        $states->releaseEvents();
+
+        try {
+            $states->modifyState($state->id, ['amount' => 20, 'pending']);
+            $this->fail('A plain value under a numeric key must be rejected.');
+        } catch (CannotModifyStateException) {
+        }
+
+        $this->assertSame(10, $states->getState('order')?->value('amount'));
+        $this->assertSame([], $states->getEvents());
+    }
+
+    #[Test]
+    public function modifyStateAcceptsAStateDetailUnderANumericKey(): void
+    {
+        $states = $this->makeStates();
+        $state = $states->defineState('order', []);
+
+        $states->modifyState($state->id, [new StateDetail('amount', 20)]);
+
+        $this->assertSame(20, $states->getState('order')?->value('amount'));
+    }
 }
