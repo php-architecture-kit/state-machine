@@ -94,10 +94,9 @@ class States extends AggregateRoot
 
     public function getState(string $name): ?State
     {
-        foreach ($this->states as $state) {
-            if ($state->name === $name) {
-                return $state;
-            }
+        $state = $this->findStoredState($name);
+        if ($state !== null) {
+            return $state;
         }
 
         if (in_array($name, self::RESERVED_STATE_NAMES, true)) {
@@ -179,6 +178,41 @@ class States extends AggregateRoot
     }
 
     /**
+     * Defines the state, or sets the given details on the stored state with this name and keeps the others.
+     *
+     * Only details whose value is not identical (`===`) to the stored one are set; when nothing changes,
+     * no policy is asked and no event is recorded. Resolvers are not consulted: a name that only a resolver
+     * provides gets a stored state, which takes precedence over the resolver from then on.
+     *
+     * @param array<int,StateDetail>|array<string,mixed> $details
+     * @throws StateDefinitionException
+     * @throws StateModificationException
+     */
+    public function defineOrModifyState(string $name, array $details): State
+    {
+        $state = $this->findStoredState($name);
+        if ($state === null) {
+            return $this->defineState($name, $details);
+        }
+
+        $changed = [];
+        foreach ($details as $key => $detail) {
+            if (!$detail instanceof StateDetail) {
+                $detail = new StateDetail((string) $key, $detail);
+            }
+            if (!$this->hasSameValue($state, $detail)) {
+                $changed[$detail->name] = $detail;
+            }
+        }
+
+        if ($changed !== []) {
+            $this->modifyState($state->id, $changed);
+        }
+
+        return $this->states[$state->id->toString()];
+    }
+
+    /**
      * @throws StateRemovalException
      */
     public function removeState(StateId $stateId): void
@@ -194,5 +228,38 @@ class States extends AggregateRoot
 
         unset($this->states[$stateId->toString()]);
         $this->recordEvent(new StateRemovedEvent($stateId));
+    }
+
+    /**
+     * Removes the stored state with this name; does nothing when there is none.
+     *
+     * @throws StateRemovalException
+     */
+    public function removeStateByName(string $name): void
+    {
+        $state = $this->findStoredState($name);
+        if ($state !== null) {
+            $this->removeState($state->id);
+        }
+    }
+
+    /** The first stored state with this name: names are not unique. */
+    private function findStoredState(string $name): ?State
+    {
+        foreach ($this->states as $state) {
+            if ($state->name === $name) {
+                return $state;
+            }
+        }
+
+        return null;
+    }
+
+    /** Identity, not equality: an object counts as changed, so a change is never lost. */
+    private function hasSameValue(State $state, StateDetail $detail): bool
+    {
+        $stored = $state->details[$detail->name] ?? null;
+
+        return $stored !== null && $stored->value === $detail->value;
     }
 }
