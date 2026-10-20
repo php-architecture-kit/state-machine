@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace PhpArchitecture\StateMachine\Tests\Unit\Foundation\State;
 
 use PhpArchitecture\StateMachine\Foundation\Execution\Identity\ExecutionId;
+use PhpArchitecture\StateMachine\Foundation\State\Exception\Definition\InvalidInputProvidedToStateDefinition;
 use PhpArchitecture\StateMachine\Foundation\State\Identity\StateId;
 use PhpArchitecture\StateMachine\Foundation\State\Property\StateDetail;
 use PhpArchitecture\StateMachine\Foundation\State\State;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Throwable;
 use stdClass;
 
 class StateTest extends TestCase
@@ -79,7 +79,8 @@ class StateTest extends TestCase
     #[Test]
     public function createThrowsWhenDetailsContainNonStateDetailInstance(): void
     {
-        $this->expectException(Throwable::class);
+        $this->expectException(InvalidInputProvidedToStateDefinition::class);
+        $this->expectExceptionMessage('State "order": the detail at index 0 has no name, so it must be a ' . StateDetail::class . ', stdClass given.');
 
         State::create(ExecutionId::new(), 'order', [new stdClass()]);
     }
@@ -146,5 +147,13 @@ class StateTest extends TestCase
 
         $this->assertSame(['floor' => 3, 'doors' => 'open'], $state->values());
         $this->assertSame([], State::create(ExecutionId::new(), 'car', [])->values());
+    }
+
+    #[Test]
+    public function createMapsPlainValuesToStateDetails(): void
+    {
+        $state = State::create(ExecutionId::new(), 'car', ['floor' => 3, 'doors' => 'open']);
+
+        $this->assertEquals(['floor' => new StateDetail('floor', 3), 'doors' => new StateDetail('doors', 'open')], $state->details);
     }
 }
